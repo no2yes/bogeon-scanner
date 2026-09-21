@@ -15,8 +15,11 @@
   #form label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; }
   #form label:first-child { margin-top: 0; }
   #form input { width: 100%; box-sizing: border-box; height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; }
+  /* 아이폰 사파리에서 날짜 입력칸이 유독 크게 그려지는 걸 막아, 다른 입력칸과 크기를 맞춥니다 */
+  #form input[type="date"] { -webkit-appearance: none; appearance: none; line-height: 44px; }
   #form input[readonly] { background: #F5F5F0; color: #666; }
   #saveBtn { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #2F6F5E; color: #fff; font-size: 15px; font-weight: 600; margin-top: 16px; }
+    .qty-preset-btn { padding: 8px 14px; border-radius: 999px; border: 1px solid #ccc; background: #fff; color: #1F2A24; font-size: 14px; }
   #restart { width: 100%; padding: 10px; border-radius: 8px; border: none; background: transparent; color: #666; font-size: 13px; margin-top: 8px; display: none; }
 </style>
 </head>
@@ -29,8 +32,15 @@
     <label for="barcode">약품 코드</label>
     <input id="barcode" type="text" readonly>
 
-    <label for="name">약품명</label>
+     <label for="name">약품명</label>
     <input id="name" type="text" placeholder="예: 타이레놀 시럽">
+
+    <!-- 업체명과 약품규격은 참고용 정보라서 수정할 일이 거의 없으니 읽기 전용으로 둡니다 -->
+    <label for="company">업체명</label>
+    <input id="company" type="text" readonly>
+
+    <label for="spec">약품규격</label>
+    <input id="spec" type="text" readonly>
 
        <!-- 내용량: 자동조회로 채워지는 "한 박스 안에 몇 개 들었는지" (예: 10캡슐) -->
     <label for="quantity">내용량 (한 박스당)</label>
@@ -38,8 +48,18 @@
 
     <!-- 수량: 내용량과 다른 개념입니다. "이 약을 몇 박스(개) 가지고 있는지"를 뜻하며,
          자동으로 채워지지 않고 매번 직접 입력합니다. 기본값 1개로 시작합니다. -->
-    <label for="stockQty">수량 (몇 개 있는지)</label>
+        <label for="stockQty">수량 (몇 개 있는지)</label>
     <input id="stockQty" type="number" min="1" value="1">
+
+    <!-- 자주 쓰는 수량을 버튼으로 눌러서 바로 채울 수 있게 합니다 -->
+    <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+      <button type="button" class="qty-preset-btn" data-qty="1">1</button>
+      <button type="button" class="qty-preset-btn" data-qty="3">3</button>
+      <button type="button" class="qty-preset-btn" data-qty="5">5</button>
+      <button type="button" class="qty-preset-btn" data-qty="10">10</button>
+      <button type="button" class="qty-preset-btn" data-qty="15">15</button>
+      <button type="button" class="qty-preset-btn" data-qty="20">20</button>
+    </div>
 
     <label for="expiry">유통기한</label>
     <input id="expiry" type="date">
@@ -55,8 +75,10 @@
     var statusEl = document.getElementById('status');
     var formEl = document.getElementById('form');
     var restartBtn = document.getElementById('restart');
-        var barcodeInput = document.getElementById('barcode');
+            var barcodeInput = document.getElementById('barcode');
     var nameInput = document.getElementById('name');
+    var companyInput = document.getElementById('company'); // 업체명 (자동조회, 읽기전용)
+    var specInput = document.getElementById('spec');       // 약품규격 (자동조회, 읽기전용)
     var quantityInput = document.getElementById('quantity'); // 내용량(한 박스당) 입력칸
     var stockQtyInput = document.getElementById('stockQty'); // 수량(몇 개 있는지) 입력칸
     var expiryInput = document.getElementById('expiry');
@@ -76,11 +98,12 @@
         fetch(GAS_URL + '?action=lookup&barcode=' + encodeURIComponent(decodedText))
           .then(function (res) { return res.json(); })
           .then(function (data) {
-            if (data && data.found && data.name) {
+               if (data && data.found && data.name) {
               nameInput.value = data.name;
-              // 서버가 수량 정보도 같이 보내줬으면 그것도 채워줍니다.
+              companyInput.value = data.company || '';
+              specInput.value = data.spec || '';
               quantityInput.value = data.quantity || '';
-              statusEl.textContent = '약품명·수량 자동으로 채웠어요 — 맞는지 확인 후 저장해 주세요.';
+              statusEl.textContent = '약품 정보를 자동으로 채웠어요 — 맞는지 확인 후 저장해 주세요.';
             } else {
               // 자동조회 실패: 왜 실패했는지 원인을 파악해야 하는 디버깅 단계이므로,
               // 서버(Code.gs)가 함께 보내준 debug 값(API가 실제로 응답한 원문)을
@@ -131,7 +154,12 @@
         statusEl.textContent = '카메라 접근 실패: ' + err;
       });
     }
-
+    // 수량 버튼을 누르면 그 숫자를 수량 칸에 바로 채워줍니다.
+    document.querySelectorAll('.qty-preset-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        stockQtyInput.value = btn.getAttribute('data-qty');
+      });
+    });
     saveBtn.addEventListener('click', function () {
       if (!nameInput.value.trim()) {
         alert('약품명을 입력해 주세요.');
@@ -142,9 +170,11 @@
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                     body: JSON.stringify({
+                             body: JSON.stringify({
           barcode: barcodeInput.value,
           name: nameInput.value.trim(),
+          company: companyInput.value.trim(),
+          spec: specInput.value.trim(),
           contentAmount: quantityInput.value.trim(),  // 내용량 (예: 10캡슐)
           stockQty: stockQtyInput.value.trim(),        // 수량 (몇 개 있는지)
           expiry: expiryInput.value
