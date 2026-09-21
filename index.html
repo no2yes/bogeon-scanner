@@ -25,12 +25,21 @@
   <p id="status">카메라 권한을 요청합니다...</p>
   <div id="reader"></div>
 
-  <div id="form">
+    <div id="form">
     <label for="barcode">약품 코드</label>
     <input id="barcode" type="text" readonly>
 
     <label for="name">약품명</label>
     <input id="name" type="text" placeholder="예: 타이레놀 시럽">
+
+       <!-- 내용량: 자동조회로 채워지는 "한 박스 안에 몇 개 들었는지" (예: 10캡슐) -->
+    <label for="quantity">내용량 (한 박스당)</label>
+    <input id="quantity" type="text" placeholder="예: 10캡슐">
+
+    <!-- 수량: 내용량과 다른 개념입니다. "이 약을 몇 박스(개) 가지고 있는지"를 뜻하며,
+         자동으로 채워지지 않고 매번 직접 입력합니다. 기본값 1개로 시작합니다. -->
+    <label for="stockQty">수량 (몇 개 있는지)</label>
+    <input id="stockQty" type="number" min="1" value="1">
 
     <label for="expiry">유통기한</label>
     <input id="expiry" type="date">
@@ -46,16 +55,19 @@
     var statusEl = document.getElementById('status');
     var formEl = document.getElementById('form');
     var restartBtn = document.getElementById('restart');
-    var barcodeInput = document.getElementById('barcode');
+        var barcodeInput = document.getElementById('barcode');
     var nameInput = document.getElementById('name');
+    var quantityInput = document.getElementById('quantity'); // 내용량(한 박스당) 입력칸
+    var stockQtyInput = document.getElementById('stockQty'); // 수량(몇 개 있는지) 입력칸
     var expiryInput = document.getElementById('expiry');
     var saveBtn = document.getElementById('saveBtn');
     var html5QrCode;
 
-    function onScanSuccess(decodedText) {
+       function onScanSuccess(decodedText) {
       barcodeInput.value = decodedText;
       nameInput.value = '';
       expiryInput.value = '';
+      stockQtyInput.value = '1'; // 매번 새로 스캔할 때는 일단 1개로 시작 (필요하면 직접 수정)
       html5QrCode.stop().then(function () {
         statusEl.textContent = '바코드 인식됨 — 약품명 자동조회 중...';
         formEl.style.display = 'block';
@@ -64,10 +76,11 @@
         fetch(GAS_URL + '?action=lookup&barcode=' + encodeURIComponent(decodedText))
           .then(function (res) { return res.json(); })
           .then(function (data) {
-                       if (data && data.found && data.name) {
-              // 자동조회 성공: 약품명 칸에 채워주고 사용자에게 확인하라고 안내합니다.
+            if (data && data.found && data.name) {
               nameInput.value = data.name;
-              statusEl.textContent = '약품명 자동으로 채웠어요 — 맞는지 확인 후 저장해 주세요.';
+              // 서버가 수량 정보도 같이 보내줬으면 그것도 채워줍니다.
+              quantityInput.value = data.quantity || '';
+              statusEl.textContent = '약품명·수량 자동으로 채웠어요 — 맞는지 확인 후 저장해 주세요.';
             } else {
               // 자동조회 실패: 왜 실패했는지 원인을 파악해야 하는 디버깅 단계이므로,
               // 서버(Code.gs)가 함께 보내준 debug 값(API가 실제로 응답한 원문)을
@@ -129,9 +142,11 @@
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
+                     body: JSON.stringify({
           barcode: barcodeInput.value,
           name: nameInput.value.trim(),
+          contentAmount: quantityInput.value.trim(),  // 내용량 (예: 10캡슐)
+          stockQty: stockQtyInput.value.trim(),        // 수량 (몇 개 있는지)
           expiry: expiryInput.value
         })
       })
