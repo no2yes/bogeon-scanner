@@ -131,8 +131,9 @@
     // ▼▼ 실제 배포된 Apps Script 웹 앱 URL ▼▼
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
 
-    // 홈으로 돌아가기 링크의 실제 주소를, 위에서 정의한 GAS_URL로 채워줍니다.
-    document.getElementById('homeLink').href = GAS_URL;
+    // "홈으로" 링크는 이제 Apps Script 주소가 아니라, 같은 저장소 안의
+    // home.html(경고 리본 없는 새 홈 화면)로 연결합니다.
+    document.getElementById('homeLink').href = 'home.html';
 
     var statusEl = document.getElementById('status');
     var formEl = document.getElementById('form');
