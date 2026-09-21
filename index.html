@@ -73,7 +73,10 @@
               // 서버(Code.gs)가 함께 보내준 debug 값(API가 실제로 응답한 원문)을
               // 화면 문구 뒤에 그대로 이어 붙여서 보여줍니다.
               // 원인 파악이 끝나면 이 debug 부분은 지워도 됩니다.
-              statusEl.textContent = '자동조회로 못 찾았어요 — 약품명을 직접 입력해 주세요. [디버그: ' + (data && data.debug ? data.debug : '응답 없음') + ']';
+              // data.debug 또는 data.error, 둘 중 뭐든 있는 걸 보여줍니다.
+              // (진짜 "없음"인지, 코드 중간에 에러가 나서 그런 건지 구분하기 위해서입니다)
+              var debugInfo = (data && (data.debug || data.error)) ? (data.debug || data.error) : '응답 없음 (진짜로 못 찾은 것)';
+              statusEl.textContent = '자동조회로 못 찾았어요 — 약품명을 직접 입력해 주세요. [디버그: ' + debugInfo + ']';
             }
             nameInput.focus();
           })
