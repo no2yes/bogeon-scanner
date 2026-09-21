@@ -19,7 +19,8 @@
   #form input[type="date"] { -webkit-appearance: none; appearance: none; line-height: 44px; }
   #form input[readonly] { background: #F5F5F0; color: #666; }
   #saveBtn { width: 100%; padding: 12px; border-radius: 8px; border: none; background: #2F6F5E; color: #fff; font-size: 15px; font-weight: 600; margin-top: 16px; }
-    .qty-preset-btn { padding: 8px 14px; border-radius: 999px; border: 1px solid #ccc; background: #fff; color: #1F2A24; font-size: 14px; }
+  .qty-preset-btn { padding: 8px 14px; border-radius: 999px; border: 1px solid #ccc; background: #fff; color: #1F2A24; font-size: 14px; }
+  .year-jump-btn { padding: 8px 14px; border-radius: 999px; border: 1px solid #ccc; background: #fff; color: #1F2A24; font-size: 14px; }
   #restart { width: 100%; padding: 10px; border-radius: 8px; border: none; background: transparent; color: #666; font-size: 13px; margin-top: 8px; display: none; }
 </style>
 </head>
@@ -63,6 +64,14 @@
 
     <label for="expiry">유통기한</label>
     <input id="expiry" type="date">
+
+    <!-- 유통기한이 보통 지금으로부터 1~3년 뒤인 경우가 많아서,
+         달력을 한 달씩 넘기지 않고 버튼 한 번으로 몇 년 뒤로 바로 이동할 수 있게 합니다. -->
+    <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+      <button type="button" class="year-jump-btn" data-years="1">+1년</button>
+      <button type="button" class="year-jump-btn" data-years="2">+2년</button>
+      <button type="button" class="year-jump-btn" data-years="3">+3년</button>
+    </div>
 
     <button id="saveBtn">저장</button>
   </div>
@@ -158,6 +167,23 @@
     document.querySelectorAll('.qty-preset-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         stockQtyInput.value = btn.getAttribute('data-qty');
+      });
+    });
+        // "+1년" 버튼 등을 누르면, 오늘 날짜를 기준으로 몇 년 뒤 날짜를 계산해서
+    // 유통기한 칸에 바로 채워줍니다. (예: 오늘이 2026-09-21이면 "+3년" → 2029-09-21)
+    document.querySelectorAll('.year-jump-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var yearsToAdd = parseInt(btn.getAttribute('data-years'), 10);
+        var targetDate = new Date();
+        targetDate.setFullYear(targetDate.getFullYear() + yearsToAdd);
+
+        // input type="date"는 정확히 "YYYY-MM-DD" 형식의 문자열을 요구하므로,
+        // 월과 일이 한 자리 숫자일 때 앞에 0을 붙여서 두 자리로 맞춰줍니다.
+        var yyyy = targetDate.getFullYear();
+        var mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+        var dd = String(targetDate.getDate()).padStart(2, '0');
+
+        expiryInput.value = yyyy + '-' + mm + '-' + dd;
       });
     });
     saveBtn.addEventListener('click', function () {
