@@ -71,25 +71,30 @@
   <div id="form">
     <!-- 바코드·업체명·약품규격은 확인용 정보라 작은 한 줄로 요약해서 보여주고,
          실제 값은 화면에 안 보이는 hidden input에 담아 저장 시 그대로 씁니다. -->
+       <!-- 코드와 업체명만 작게 한 줄로 요약해서 보여줍니다 -->
     <div id="metaLine" style="font-size: 12px; color: #888; margin-bottom: 10px; word-break: break-all;"></div>
     <input type="hidden" id="barcode">
     <input type="hidden" id="company">
-    <input type="hidden" id="spec">
 
     <label for="name">약품명</label>
     <input id="name" type="text" placeholder="예: 타이레놀 시럽">
 
-    <!-- 내용량과 수량을 한 줄에 나란히 배치해서 세로 공간을 아낍니다 -->
+    <!-- 규격(용량)과 내용량을 한 줄에 나란히 배치합니다. 규격은 자동조회로만 채워지는
+         참고용 정보라 읽기 전용으로 둡니다. -->
     <div style="display: flex; gap: 10px;">
+      <div style="flex: 1;">
+        <label for="spec">규격</label>
+        <input id="spec" type="text" readonly>
+      </div>
       <div style="flex: 1;">
         <label for="quantity">내용량</label>
         <input id="quantity" type="text" placeholder="예: 10캡슐">
       </div>
-      <div style="flex: 1;">
-        <label for="stockQty">수량</label>
-        <input id="stockQty" type="number" min="1" value="1">
-      </div>
     </div>
+
+    <!-- 수량(몇 개 가지고 있는지)은 다음 줄에 단독으로 배치합니다 -->
+    <label for="stockQty">수량</label>
+    <input id="stockQty" type="number" min="1" value="1">
 
     <!-- 자주 쓰는 수량을 버튼으로 눌러서 바로 채울 수 있게 합니다 -->
     <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
@@ -139,7 +144,6 @@
       var parts = [];
       if (barcodeInput.value) parts.push('코드 ' + barcodeInput.value);
       if (companyInput.value) parts.push(companyInput.value);
-      if (specInput.value) parts.push(specInput.value);
       document.getElementById('metaLine').textContent = parts.join(' · ');
     }
 
