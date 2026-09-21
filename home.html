@@ -41,7 +41,15 @@
 
   <!-- 스캐너 페이지(index.html)로 이동하는 버튼입니다. 같은 저장소 안에 있으므로
        상대경로(index.html)로 연결합니다. -->
-  <a class="scan-btn" href="index.html">약품 바코드 스캔하기</a>
+  <!-- PC에서는 버튼을 누르면 아래 QR 코드가 나타나고, 모바일에서는 버튼을 누르면
+       바로 스캔 페이지로 이동합니다. 어느 쪽인지는 아래 스크립트에서 기기를 판별해 정합니다. -->
+  <button type="button" id="scanBtn" class="scan-btn" style="width: 100%; border: none; cursor: pointer;">약품 바코드 스캔하기</button>
+
+  <!-- PC에서만 보이는 QR 코드 영역입니다. 평소엔 숨겨져 있습니다. -->
+  <div id="qrBox" style="display: none; text-align: center; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">휴대폰 카메라로 아래 QR코드를 스캔하세요</div>
+    <img id="qrImg" width="200" height="200" alt="스캔 페이지 QR코드">
+  </div>
 
   <h2>유통기한 임박 약품</h2>
   <table id="table" style="display:none;">
@@ -84,6 +92,33 @@
       .catch(function () {
         document.getElementById('empty').textContent = '데이터를 불러오지 못했습니다.';
       });
+      // 이 페이지(home.html)와 같은 폴더에 있는 스캔 페이지(index.html)의 전체 주소입니다.
+    // QR코드는 폰이 아닌 다른 기기(PC)에서 찍는 것이므로, 상대경로가 아니라
+    // 완전한 주소(https://...)로 만들어줘야 폰에서 스캔했을 때 정확히 열립니다.
+    var scannerUrl = window.location.href.replace('home.html', 'index.html');
+
+    // 접속한 기기가 휴대폰/태블릿인지 아닌지를 브라우저 정보(User-Agent)로 판별합니다.
+    // 완벽하진 않지만, 일반적인 PC와 모바일을 구분하는 데는 충분합니다.
+    var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+    var scanBtn = document.getElementById('scanBtn');
+    var qrBox = document.getElementById('qrBox');
+
+    scanBtn.addEventListener('click', function () {
+      if (isMobile) {
+        // 모바일이면 QR 코드를 보여줄 필요 없이, 바로 스캔 페이지로 이동합니다.
+        window.location.href = 'index.html';
+      } else {
+        // PC면 이동하지 않고, QR 코드 영역을 보여줍니다(이미 열려있으면 다시 숨김).
+        var isShown = qrBox.style.display === 'block';
+        qrBox.style.display = isShown ? 'none' : 'block';
+        if (!isShown) {
+          // QR 이미지는 필요할 때(처음 열 때)만 만들어서, 불필요한 요청을 줄입니다.
+          document.getElementById('qrImg').src =
+            'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(scannerUrl);
+        }
+      }
+    });  
   </script>
 </body>
 </html>
