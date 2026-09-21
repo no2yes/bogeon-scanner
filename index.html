@@ -188,7 +188,9 @@
               var debugInfo = (data && (data.debug || data.error)) ? (data.debug || data.error) : '응답 없음 (진짜로 못 찾은 것)';
               statusEl.textContent = '자동조회로 못 찾았어요 — 약품명을 직접 입력해 주세요. [디버그: ' + debugInfo + ']';
             }
-            nameInput.focus();
+            // 약품명은 자동으로 채워지는 경우가 많으니, 매번 직접 입력해야 하는
+            // "수량" 칸에 커서를 놓아서 바로 숫자를 입력할 수 있게 합니다.
+            stockQtyInput.focus();
           })
           .catch(function () {
             // 통신 자체가 실패한 경우에도 로딩 표시를 꺼줘야, 화면이 멈춘 것처럼 안 보입니다.
