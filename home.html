@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>보건실 관리시스템</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; margin: 0; padding: 20px; background: #F7F5EF; color: #1F2A24; }
+  h1 { font-size: 18px; margin: 0 0 16px; }
+
+  /* 요약 카드 두 개를 나란히 배치합니다 */
+  .stat-cards { display: flex; gap: 12px; margin-bottom: 20px; }
+  .stat-card { flex: 1; box-sizing: border-box; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 16px; }
+  .stat-label { font-size: 12px; color: #888; margin-bottom: 6px; }
+  .stat-value { font-size: 28px; font-weight: 700; }
+  .stat-value.warn { color: #B7791F; }
+
+  a.scan-btn { display: block; text-align: center; padding: 14px; border-radius: 10px; background: #2F6F5E; color: #fff; text-decoration: none; font-size: 15px; font-weight: 600; margin-bottom: 20px; }
+
+  h2 { font-size: 15px; margin: 0 0 10px; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; }
+  th, td { padding: 10px 12px; font-size: 13px; text-align: left; border-bottom: 1px solid #eee; }
+  th { background: #FAF9F5; color: #666; }
+  .dday-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(183,121,31,0.12); color: #B7791F; font-size: 12px; font-weight: 600; }
+  #empty { font-size: 13px; color: #999; margin-top: 12px; text-align: center; }
+</style>
+</head>
+<body>
+  <h1>보건실 관리시스템</h1>
+
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="stat-label">전체 등록 약품</div>
+      <div class="stat-value" id="totalCount">–</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">유통기한 임박 (30일 이내)</div>
+      <div class="stat-value warn" id="expiringCount">–</div>
+    </div>
+  </div>
+
+  <!-- 스캐너 페이지(index.html)로 이동하는 버튼입니다. 같은 저장소 안에 있으므로
+       상대경로(index.html)로 연결합니다. -->
+  <a class="scan-btn" href="index.html">약품 바코드 스캔하기</a>
+
+  <h2>유통기한 임박 약품</h2>
+  <table id="table" style="display:none;">
+    <thead><tr><th>약품명</th><th>유통기한</th><th>상태</th></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div id="empty">불러오는 중...</div>
+
+  <script>
+    // ▼▼ Apps Script 웹 앱의 실제 exec 주소로 바꿔주세요 (scanner.html과 동일한 주소) ▼▼
+    var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
+
+    // google.script.run은 Apps Script가 직접 서빙하는 페이지 안에서만 쓸 수 있는
+    // 기능이라, 이 페이지(GitHub Pages)에서는 쓸 수 없습니다. 대신 일반적인
+    // fetch로 Apps Script의 doGet(?action=stats)을 호출해서 데이터만 받아옵니다.
+    fetch(GAS_URL + '?action=stats')
+      .then(function (res) { return res.json(); })
+      .then(function (stats) {
+        document.getElementById('totalCount').textContent = stats.total;
+        document.getElementById('expiringCount').textContent = stats.expiringSoon;
+
+        var list = stats.expiringList;
+        var emptyEl = document.getElementById('empty');
+
+        if (!list || list.length === 0) {
+          emptyEl.textContent = '유통기한이 임박한 약품이 없습니다.';
+          return;
+        }
+
+        emptyEl.style.display = 'none';
+        var tbody = document.getElementById('tbody');
+        list.forEach(function (item) {
+          var tr = document.createElement('tr');
+          var ddayText = item.dday < 0 ? '지남' : ('D-' + item.dday);
+          tr.innerHTML = '<td>' + item.name + '</td><td>' + item.expiry + '</td><td><span class="dday-badge">' + ddayText + '</span></td>';
+          tbody.appendChild(tr);
+        });
+        document.getElementById('table').style.display = 'table';
+      })
+      .catch(function () {
+        document.getElementById('empty').textContent = '데이터를 불러오지 못했습니다.';
+      });
+  </script>
+</body>
+</html>
