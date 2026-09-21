@@ -57,10 +57,25 @@
       nameInput.value = '';
       expiryInput.value = '';
       html5QrCode.stop().then(function () {
-        statusEl.textContent = '바코드 인식됨 — 약품명과 유통기한을 입력해 주세요.';
+        statusEl.textContent = '바코드 인식됨 — 약품명 자동조회 중...';
         formEl.style.display = 'block';
         restartBtn.style.display = 'block';
-        nameInput.focus();
+
+        fetch(GAS_URL + '?action=lookup&barcode=' + encodeURIComponent(decodedText))
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            if (data && data.found && data.name) {
+              nameInput.value = data.name;
+              statusEl.textContent = '약품명 자동으로 채웠어요 — 맞는지 확인 후 저장해 주세요.';
+            } else {
+              statusEl.textContent = '자동조회로 못 찾았어요 — 약품명을 직접 입력해 주세요.';
+            }
+            nameInput.focus();
+          })
+          .catch(function () {
+            statusEl.textContent = '자동조회 실패 — 약품명을 직접 입력해 주세요.';
+            nameInput.focus();
+          });
       });
     }
 
