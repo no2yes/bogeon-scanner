@@ -133,11 +133,24 @@
     var saveBtn = document.getElementById('saveBtn');
     var html5QrCode;
 
+    // 코드·업체명·규격을 한 줄짜리 요약 문구로 합쳐서 metaLine에 표시합니다.
+    // 값이 없는 항목(예: 아직 조회가 안 된 규격)은 건너뛰고 " · "로만 구분해서 이어붙입니다.
+    function updateMetaLine() {
+      var parts = [];
+      if (barcodeInput.value) parts.push('코드 ' + barcodeInput.value);
+      if (companyInput.value) parts.push(companyInput.value);
+      if (specInput.value) parts.push(specInput.value);
+      document.getElementById('metaLine').textContent = parts.join(' · ');
+    }
+
     function onScanSuccess(decodedText) {
       barcodeInput.value = decodedText;
       nameInput.value = '';
+      companyInput.value = '';
+      specInput.value = '';
       expiryInput.value = '';
       stockQtyInput.value = '1'; // 매번 새로 스캔할 때는 일단 1개로 시작 (필요하면 직접 수정)
+      updateMetaLine(); // 코드만 있는 상태로 일단 한 번 표시
       html5QrCode.stop().then(function () {
         formEl.style.display = 'block';
         restartBtn.style.display = 'block';
@@ -156,6 +169,7 @@
               companyInput.value = data.company || '';
               specInput.value = data.spec || '';
               quantityInput.value = data.quantity || '';
+              updateMetaLine(); // 업체명·규격까지 채워졌으니 요약줄을 다시 갱신
               statusEl.textContent = '약품 정보를 자동으로 채웠어요 — 맞는지 확인 후 저장해 주세요.';
             } else {
               var debugInfo = (data && (data.debug || data.error)) ? (data.debug || data.error) : '응답 없음 (진짜로 못 찾은 것)';
