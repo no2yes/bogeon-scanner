@@ -48,15 +48,11 @@
 <body>
   <h1>보건실 관리시스템</h1>
 
-  <div class="stat-cards">
-    <div class="stat-card">
-      <div class="stat-label">전체 등록 약품</div>
-      <div class="stat-value" id="totalCount">–</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">유통기한 임박 (30일 이내)</div>
-      <div class="stat-value warn" id="expiringCount">–</div>
-    </div>
+  <!-- PC에서 이 화면을 볼 때, 스마트폰으로 같은 화면을 바로 열 수 있게 QR코드를
+       상시 보여줍니다. 폰에서 볼 땐 이미 폰이니 굳이 필요 없어서 숨깁니다. -->
+  <div id="homeQrBox" style="display: none; text-align: center; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">스마트폰으로 이 화면 바로 열기</div>
+    <img id="homeQrImg" width="160" height="160" alt="홈 화면 QR코드">
   </div>
 
   <!-- 스캐너 페이지(index.html)로 이동하는 버튼입니다. 같은 저장소 안에 있으므로
@@ -81,7 +77,16 @@
   <script>
     // ▼▼ Apps Script 웹 앱의 실제 exec 주소로 바꿔주세요 (scanner.html과 동일한 주소) ▼▼
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
+    // 접속한 기기가 PC인지 모바일인지 판별합니다.
+    var isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
+    // PC일 때만, 이 페이지 자체의 주소로 QR코드를 만들어서 보여줍니다.
+    if (!isMobileDevice) {
+      var cleanHomeUrl = window.location.href.split('?')[0];
+      document.getElementById('homeQrImg').src =
+        'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(cleanHomeUrl);
+      document.getElementById('homeQrBox').style.display = 'block';
+    }
     // google.script.run은 Apps Script가 직접 서빙하는 페이지 안에서만 쓸 수 있는
     // 기능이라, 이 페이지(GitHub Pages)에서는 쓸 수 없습니다. 대신 일반적인
     // fetch로 Apps Script의 doGet(?action=stats)을 호출해서 데이터만 받아옵니다.
