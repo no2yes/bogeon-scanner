@@ -170,10 +170,19 @@
     <div class="feedback-box">
       <h3>바꾸고 싶은 점을 알려주세요</h3>
       <textarea id="feedbackText" placeholder="예: 약품명 칸이 너무 작아요, 이 버튼 위치를 바꿔주세요 등"></textarea>
-      <label class="feedback-checkbox">
+      <label class="feedback-checkbox" id="desktopCaptureRow">
         <input type="checkbox" id="includeScreenshot" checked>
         지금 보고 있는 화면 캡처를 같이 보내기
       </label>
+
+      <!-- 모바일은 진짜 화면공유(getDisplayMedia)를 못 쓰는 경우가 많아서,
+           대신 폰 자체 스크린샷 기능으로 미리 찍어둔 사진을 갤러리에서
+           골라 첨부하는 방식을 씁니다. -->
+      <div class="feedback-checkbox" id="mobileCaptureRow" style="display:none;">
+        <button type="button" id="attachScreenshotBtn" style="padding:6px 10px;border-radius:6px;border:1px solid #ccc;background:#fff;font-size:12px;cursor:pointer;-webkit-appearance:none;appearance:none;">📎 스크린샷 첨부</button>
+        <span id="attachedFileName" style="margin-left:8px;color:#666;"></span>
+        <input type="file" id="screenshotFileInput" accept="image/*" style="display:none;">
+      </div>
       <div id="feedbackStatus"></div>
       <div class="feedback-actions">
         <button type="button" id="feedbackCancel">취소</button>
@@ -297,6 +306,45 @@
     var feedbackStatus = document.getElementById('feedbackStatus');
     var includeScreenshot = document.getElementById('includeScreenshot');
 
+    // 모바일에서 첨부한 스크린샷 파일을 담아둘 변수입니다.
+    var attachScreenshotBtn = document.getElementById('attachScreenshotBtn');
+    var screenshotFileInput = document.getElementById('screenshotFileInput');
+    var attachedFileName = document.getElementById('attachedFileName');
+    var attachedScreenshotDataUrl = null;
+
+    if (isMobile) {
+      document.getElementById('desktopCaptureRow').style.display = 'none';
+      document.getElementById('mobileCaptureRow').style.display = 'block';
+    }
+
+    attachScreenshotBtn.addEventListener('click', function () {
+      screenshotFileInput.click();
+    });
+
+    screenshotFileInput.addEventListener('change', function () {
+      var file = screenshotFileInput.files[0];
+      if (!file) return;
+      attachedFileName.textContent = '불러오는 중...';
+
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          // 원본 사진이 너무 크면 전송이 느려지므로, 가로 1000px로 줄여서 저장합니다.
+          var maxWidth = 1000;
+          var scaleRatio = Math.min(1, maxWidth / img.width);
+          var canvas = document.createElement('canvas');
+          canvas.width = img.width * scaleRatio;
+          canvas.height = img.height * scaleRatio;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          attachedScreenshotDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          attachedFileName.textContent = '첨부됨 ✓';
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
     feedbackFab.addEventListener('click', function () {
       feedbackModal.style.display = 'flex';
     });
@@ -394,6 +442,9 @@
         loadingText.textContent = '접수 완료!';
         loadingSub.textContent = subText;
         feedbackText.value = '';
+        attachedScreenshotDataUrl = null;
+        if (attachedFileName) attachedFileName.textContent = '';
+        if (screenshotFileInput) screenshotFileInput.value = '';
         setTimeout(function () {
           document.getElementById('feedbackLoadingOverlay').style.display = 'none';
           document.getElementById('feedbackSubmit').disabled = false;
@@ -443,6 +494,11 @@
         return;
       }
       feedbackStatus.textContent = '전송 중...';
+
+      if (isMobile) {
+        sendFeedback(attachedScreenshotDataUrl || '');
+        return;
+      }
 
       if (includeScreenshot.checked && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
         feedbackModal.style.display = 'none';
