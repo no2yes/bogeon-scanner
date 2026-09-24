@@ -313,6 +313,21 @@
             throw new Error(data && data.error ? data.error : '알 수 없는 오류');
           }
 
+          // AI 요약은 여기서 결과를 기다리지 않습니다(fire-and-forget).
+          // .then/.catch를 걸어두긴 하지만, 그 응답이 올 때까지 화면이
+          // 멈춰있지 않고 바로 다음 단계(이미지 전송 또는 완료 처리)로
+          // 넘어갑니다. 실패해도 조용히 무시합니다 — 제목이 안 붙는 것뿐,
+          // 글 내용 자체는 이미 안전하게 저장된 뒤라 문제가 없습니다.
+          fetch(DEV_CONSOLE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              type: 'summarize',
+              rowIndex: data.rowIndex,
+              message: feedbackText.value.trim()
+            })
+          }).catch(function () { /* 조용히 무시 */ });
+
           // 글은 이미 저장 완료. 이미지가 없으면 여기서 끝냅니다.
           if (!screenshotDataUrl) {
             finishSuccess('감사합니다');
@@ -428,6 +443,6 @@
       }
     });
   </script>
-  <div id="versionTag">v2026-09-24-14</div>
+  <div id="versionTag">v2026-09-24-15</div>
 </body>
 </html>
