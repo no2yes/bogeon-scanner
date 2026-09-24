@@ -75,18 +75,28 @@
   /* 전송 중 화면 전체(피드백 창 포함)를 덮는 큼직한 로딩 표시입니다.
      이게 떠 있는 동안은 뒤에 있는 어떤 버튼도 물리적으로 클릭할 수 없습니다
      (오버레이가 그 위를 완전히 덮어서 클릭 자체가 오버레이한테 먼저 잡히기 때문입니다). */
+  /* 화면 전체를 덮는 로딩 표시들이 공통으로 쓰는 큼직한 스피너입니다.
+     페이지 첫 로딩, 피드백 전송 둘 다 이 스타일을 씁니다. */
+  .big-spinner {
+    width: 68px; height: 68px; border: 6px solid rgba(47, 111, 94, 0.12);
+    border-top-color: #2F6F5E; border-radius: 50%; animation: bigspin 0.9s linear infinite;
+  }
+  @keyframes bigspin { to { transform: rotate(360deg); } }
+
+  #pageLoadingOverlay {
+    position: fixed; inset: 0; background: #F7F5EF;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 800;
+  }
+  .page-loading-text { margin-top: 20px; font-size: 18px; font-weight: 700; color: #1F2A24; }
+
   #feedbackLoadingOverlay {
-    position: fixed; inset: 0; background: rgba(247, 245, 239, 0.95);
+    position: fixed; inset: 0; background: rgba(247, 245, 239, 0.97);
     display: none; flex-direction: column; align-items: center; justify-content: center;
     z-index: 700;
   }
-  #feedbackLoadingOverlay .spinner {
-    width: 56px; height: 56px; border: 5px solid rgba(47, 111, 94, 0.15);
-    border-top-color: #2F6F5E; border-radius: 50%; animation: fbspin 0.8s linear infinite;
-  }
-  @keyframes fbspin { to { transform: rotate(360deg); } }
-  #feedbackLoadingOverlay .loading-text { margin-top: 16px; font-size: 17px; font-weight: 600; color: #1F2A24; }
-  #feedbackLoadingOverlay .loading-sub { margin-top: 6px; font-size: 13px; color: #888; }
+  #feedbackLoadingOverlay .loading-text { margin-top: 20px; font-size: 19px; font-weight: 700; color: #1F2A24; }
+  #feedbackLoadingOverlay .loading-sub { margin-top: 8px; font-size: 14px; color: #888; }
     /* 화면 왼쪽 아래에 작게 표시되는 버전 번호입니다. GitHub Pages는 반영까지
      시간이 좀 걸려서, 지금 보고 있는 화면이 최신 버전인지 눈으로 바로
      확인하기 위한 용도입니다. */
@@ -99,6 +109,13 @@
 </style>
 </head>
 <body>
+  <!-- 페이지를 처음 열었을 때, 통계·목록을 다 불러올 때까지 화면 전체를
+       덮는 로딩 표시입니다. 다 불러오면 자바스크립트에서 숨깁니다. -->
+  <div id="pageLoadingOverlay">
+    <div class="big-spinner"></div>
+    <div class="page-loading-text">정보를 불러오고 있어요...</div>
+  </div>
+
   <h1>보건실 관리시스템</h1>
 
   <div class="stat-cards">
@@ -168,7 +185,7 @@
        높아서(700 vs 600), 떠 있는 동안은 입력창의 "보내기"·"취소" 버튼이
        화면에 보여도 실제로는 이 오버레이가 클릭을 가로채서 눌리지 않습니다. -->
   <div id="feedbackLoadingOverlay">
-    <div class="spinner"></div>
+    <div class="big-spinner"></div>
     <div class="loading-text">전송 중이에요...</div>
     <div class="loading-sub">캡처가 있으면 조금 더 걸릴 수 있어요</div>
   </div>
@@ -211,6 +228,7 @@
     fetch(GAS_URL + '?action=stats')
       .then(function (res) { return res.json(); })
       .then(function (stats) {
+        document.getElementById('pageLoadingOverlay').style.display = 'none';
         document.getElementById('totalCount').textContent = stats.total;
         document.getElementById('expiringCount').textContent = stats.expiringSoon;
 
@@ -237,6 +255,7 @@
         document.getElementById('table').style.display = 'table';
       })
       .catch(function () {
+        document.getElementById('pageLoadingOverlay').style.display = 'none';
         document.getElementById('empty').textContent = '데이터를 불러오지 못했습니다.';
       });
       // 이 페이지(home.html)와 같은 폴더에 있는 스캔 페이지(index.html)의 전체 주소입니다.
