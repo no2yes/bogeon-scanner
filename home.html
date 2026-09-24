@@ -298,9 +298,12 @@
         // 캡처하는 동안 이 입력창 자체가 화면에 찍히지 않도록 잠깐 숨겼다가,
         // 캡처가 끝나면 다시 보여줍니다.
         feedbackModal.style.display = 'none';
-        html2canvas(document.body, { scale: 0.6 }).then(function (canvas) {
-          var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        // scale을 0.6→0.35로, 화질을 0.7→0.5로 낮춰서 전송 용량을 더 줄입니다.
+        // (화면을 알아볼 수 있는 정도면 충분하고, 용량이 작을수록 전송·저장이 빨라집니다)
+        html2canvas(document.body, { scale: 0.35 }).then(function (canvas) {
+          var dataUrl = canvas.toDataURL('image/jpeg', 0.5);
           feedbackModal.style.display = 'flex';
+          feedbackStatus.textContent = '전송 중... (캡처가 있으면 조금 더 걸릴 수 있어요)';
           sendFeedback(dataUrl);
         });
       } else {
