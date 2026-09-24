@@ -374,16 +374,23 @@
             // 화면 공유가 시작된 직후 첫 프레임은 아직 비어있을 수 있어서,
             // 아주 잠깐(0.3초) 기다렸다가 캡처합니다.
             setTimeout(function () {
+              // 원본 해상도(예: 1920×1080 이상) 그대로 저장하면 파일이 너무
+              // 무거워져서, 전송이 불안정해지는 원인이 됩니다. 그래서 가로
+              // 폭을 최대 1000px로 줄여서 저장합니다(세로는 비율에 맞춰
+              // 자동으로 줄어듭니다). 알아보는 데는 이 정도 크기면 충분합니다.
+              var maxWidth = 1000;
+              var scaleRatio = Math.min(1, maxWidth / video.videoWidth);
+
               var canvas = document.createElement('canvas');
-              canvas.width = video.videoWidth;
-              canvas.height = video.videoHeight;
+              canvas.width = video.videoWidth * scaleRatio;
+              canvas.height = video.videoHeight * scaleRatio;
               canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
               // 캡처가 끝났으니, 화면 공유를 바로 중단합니다(화면 상단에
               // "공유 중" 표시가 계속 떠 있지 않도록).
               stream.getTracks().forEach(function (t) { t.stop(); });
 
-              resolve(canvas.toDataURL('image/jpeg', 0.7));
+              resolve(canvas.toDataURL('image/jpeg', 0.5));
             }, 300);
           };
         });
