@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>보건실 관리시스템</title>
+<!-- 화면을 그대로 캡처해주는 무료 오픈소스 라이브러리입니다 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; margin: 0; padding: 20px; background: #F7F5EF; color: #1F2A24; }
   h1 { font-size: 18px; margin: 0 0 16px; }
@@ -48,6 +50,30 @@
      주황색 배지와 한눈에 구분되게 합니다. */
   .dday-badge.expired { background: #DC2626; color: #fff; font-weight: 700; }
   #empty { font-size: 13px; color: #999; margin-top: 12px; text-align: center; }
+
+  /* 화면 오른쪽 아래에 항상 떠 있는 피드백 버튼 */
+  #feedbackFab {
+    position: fixed; right: 16px; bottom: 16px; z-index: 500;
+    padding: 12px 18px; border-radius: 999px; border: none;
+    background: #1F2A24; color: #fff; font-size: 14px; font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; font-family: inherit;
+    -webkit-appearance: none; appearance: none;
+  }
+  /* 버튼을 누르면 뜨는 어두운 배경(오버레이) + 가운데 흰 박스(모달) */
+  #feedbackModal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: none; align-items: center; justify-content: center;
+    z-index: 600; padding: 20px; box-sizing: border-box;
+  }
+  .feedback-box { background: #fff; border-radius: 14px; padding: 20px; width: 100%; max-width: 360px; box-sizing: border-box; }
+  .feedback-box h3 { margin: 0 0 12px; font-size: 16px; }
+  #feedbackText { width: 100%; box-sizing: border-box; min-height: 100px; border: 1px solid #ccc; border-radius: 8px; padding: 10px; font-family: inherit; font-size: 14px; resize: vertical; }
+  .feedback-checkbox { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 13px; color: #555; }
+  #feedbackStatus { font-size: 12px; color: #888; margin-top: 8px; min-height: 16px; }
+  .feedback-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .feedback-actions button { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none; }
+  #feedbackCancel { background: #eee; color: #333; }
+  #feedbackSubmit { background: #2F6F5E; color: #fff; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -94,6 +120,26 @@
     </button>
     <div id="qrContent" style="display: none; text-align: center; background: #fff; border: 1px solid #eee; border-top: none; border-radius: 0 0 10px 10px; padding: 20px;">
       <img id="homeQrImg" width="160" height="160" alt="홈 화면 QR코드">
+    </div>
+  </div>
+
+  <!-- 화면 오른쪽 아래에 항상 떠 있는 피드백 버튼입니다 -->
+  <button type="button" id="feedbackFab">💬 피드백</button>
+
+  <!-- 버튼을 누르면 뜨는 입력창입니다. 평소엔 숨겨져 있습니다. -->
+  <div id="feedbackModal">
+    <div class="feedback-box">
+      <h3>바꾸고 싶은 점을 알려주세요</h3>
+      <textarea id="feedbackText" placeholder="예: 약품명 칸이 너무 작아요, 이 버튼 위치를 바꿔주세요 등"></textarea>
+      <label class="feedback-checkbox">
+        <input type="checkbox" id="includeScreenshot" checked>
+        지금 보고 있는 화면 캡처를 같이 보내기
+      </label>
+      <div id="feedbackStatus"></div>
+      <div class="feedback-actions">
+        <button type="button" id="feedbackCancel">취소</button>
+        <button type="button" id="feedbackSubmit">보내기</button>
+      </div>
     </div>
   </div>
 
@@ -190,6 +236,71 @@
         }
       }
     });  
+        // ── 피드백 기능 ──────────────────────────────
+    var feedbackFab = document.getElementById('feedbackFab');
+    var feedbackModal = document.getElementById('feedbackModal');
+    var feedbackText = document.getElementById('feedbackText');
+    var feedbackStatus = document.getElementById('feedbackStatus');
+    var includeScreenshot = document.getElementById('includeScreenshot');
+
+    feedbackFab.addEventListener('click', function () {
+      feedbackModal.style.display = 'flex';
+    });
+    document.getElementById('feedbackCancel').addEventListener('click', function () {
+      feedbackModal.style.display = 'none';
+    });
+
+    // 실제로 Apps Script에 피드백을 전송하는 함수입니다.
+    // screenshotDataUrl은 이미지 데이터(문자열)이거나, 캡처를 안 보내는 경우 빈 문자열입니다.
+    function sendFeedback(screenshotDataUrl) {
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          type: 'feedback', // 약품 등록(doPost)과 구분하기 위한 표시입니다.
+          message: feedbackText.value.trim(),
+          screenshot: screenshotDataUrl || '',
+          page: window.location.href
+        })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data && data.ok) {
+            feedbackStatus.textContent = '접수됐습니다. 감사합니다!';
+            feedbackText.value = '';
+            setTimeout(function () {
+              feedbackModal.style.display = 'none';
+              feedbackStatus.textContent = '';
+            }, 1500);
+          } else {
+            feedbackStatus.textContent = '전송 실패: ' + (data && data.error ? data.error : '알 수 없는 오류');
+          }
+        })
+        .catch(function () {
+          feedbackStatus.textContent = '전송 실패 (네트워크 오류)';
+        });
+    }
+
+    document.getElementById('feedbackSubmit').addEventListener('click', function () {
+      if (!feedbackText.value.trim()) {
+        alert('내용을 입력해 주세요.');
+        return;
+      }
+      feedbackStatus.textContent = '전송 중...';
+
+      if (includeScreenshot.checked && window.html2canvas) {
+        // 캡처하는 동안 이 입력창 자체가 화면에 찍히지 않도록 잠깐 숨겼다가,
+        // 캡처가 끝나면 다시 보여줍니다.
+        feedbackModal.style.display = 'none';
+        html2canvas(document.body, { scale: 0.6 }).then(function (canvas) {
+          var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          feedbackModal.style.display = 'flex';
+          sendFeedback(dataUrl);
+        });
+      } else {
+        sendFeedback('');
+      }
+    });
   </script>
 </body>
 </html>
