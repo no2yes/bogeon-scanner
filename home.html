@@ -330,14 +330,15 @@
       reader.onload = function (e) {
         var img = new Image();
         img.onload = function () {
-          // 원본 사진이 너무 크면 전송이 느려지므로, 가로 1000px로 줄여서 저장합니다.
-          var maxWidth = 1000;
+          // 화면 캡처는 사진이 아니라 UI(글자·버튼)라서, 해상도를 더 낮춰도
+          // 알아보는 데는 문제없습니다. 700px + 화질 45%로 더 공격적으로 줄입니다.
+          var maxWidth = 700;
           var scaleRatio = Math.min(1, maxWidth / img.width);
           var canvas = document.createElement('canvas');
           canvas.width = img.width * scaleRatio;
           canvas.height = img.height * scaleRatio;
           canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          attachedScreenshotDataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          attachedScreenshotDataUrl = canvas.toDataURL('image/jpeg', 0.45);
           attachedFileName.textContent = '첨부됨 ✓';
         };
         img.src = e.target.result;
