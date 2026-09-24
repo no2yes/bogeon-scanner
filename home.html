@@ -88,6 +88,13 @@
   @keyframes fbspin { to { transform: rotate(360deg); } }
   #feedbackLoadingOverlay .loading-text { margin-top: 16px; font-size: 17px; font-weight: 600; color: #1F2A24; }
   #feedbackLoadingOverlay .loading-sub { margin-top: 6px; font-size: 13px; color: #888; }
+    /* 화면 왼쪽 아래에 작게 표시되는 버전 번호입니다. GitHub Pages는 반영까지
+     시간이 좀 걸려서, 지금 보고 있는 화면이 최신 버전인지 눈으로 바로
+     확인하기 위한 용도입니다. */
+  #versionTag {
+    position: fixed; left: 8px; bottom: 8px; z-index: 400;
+    font-size: 10px; color: #bbb; font-family: monospace;
+  }
   #feedbackCancel { background: #eee; color: #333; }
   #feedbackSubmit { background: #2F6F5E; color: #fff; font-weight: 600; }
 </style>
@@ -351,5 +358,6 @@
       }
     });
   </script>
+  <div id="versionTag">v2026-09-24-1</div>
 </body>
 </html>
