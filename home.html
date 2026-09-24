@@ -4,8 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>보건실 관리시스템</title>
-<!-- 화면을 그대로 캡처해주는 무료 오픈소스 라이브러리입니다 -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; margin: 0; padding: 20px; background: #F7F5EF; color: #1F2A24; }
   h1 { font-size: 18px; margin: 0 0 16px; }
@@ -360,6 +359,37 @@
         });
     }
 
+    // 진짜 화면을 캡처하는 함수입니다. html2canvas처럼 "재구성해서 그리는"
+    // 방식이 아니라, 브라우저 자체의 화면 공유 기능을 이용해서 실제로
+    // 지금 보이는 그대로를 찍습니다. 그래서 사용자의 명시적인 허용이
+    // 매번 필요합니다(보안상 생략할 수 없는 절차입니다).
+    function captureRealScreenshot() {
+      return navigator.mediaDevices.getDisplayMedia({ video: true }).then(function (stream) {
+        var video = document.createElement('video');
+        video.srcObject = stream;
+
+        return new Promise(function (resolve, reject) {
+          video.onloadedmetadata = function () {
+            video.play();
+            // 화면 공유가 시작된 직후 첫 프레임은 아직 비어있을 수 있어서,
+            // 아주 잠깐(0.3초) 기다렸다가 캡처합니다.
+            setTimeout(function () {
+              var canvas = document.createElement('canvas');
+              canvas.width = video.videoWidth;
+              canvas.height = video.videoHeight;
+              canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+              // 캡처가 끝났으니, 화면 공유를 바로 중단합니다(화면 상단에
+              // "공유 중" 표시가 계속 떠 있지 않도록).
+              stream.getTracks().forEach(function (t) { t.stop(); });
+
+              resolve(canvas.toDataURL('image/jpeg', 0.7));
+            }, 300);
+          };
+        });
+      });
+    }
+
     document.getElementById('feedbackSubmit').addEventListener('click', function () {
       if (!feedbackText.value.trim()) {
         alert('내용을 입력해 주세요.');
@@ -367,32 +397,26 @@
       }
       feedbackStatus.textContent = '전송 중...';
 
-      if (includeScreenshot.checked && window.html2canvas) {
-        // 캡처하는 동안 이 입력창 자체가 화면에 찍히지 않도록 잠깐 숨겼다가,
-        // 캡처가 끝나면 다시 보여줍니다.
+      if (includeScreenshot.checked && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
         feedbackModal.style.display = 'none';
-        // scale을 0.6→0.35로, 화질을 0.7→0.5로 낮춰서 전송 용량을 더 줄입니다.
-        // (화면을 알아볼 수 있는 정도면 충분하고, 용량이 작을수록 전송·저장이 빨라집니다)
-        html2canvas(document.body, {
-          scale: 0.6,
-          useCORS: true,
-          height: document.body.scrollHeight,
-          windowHeight: document.body.scrollHeight
-          // (참고: 예전엔 QR코드 영역을 ignoreElements로 아예 캡처에서
-          // 뺐었는데, useCORS로 그 문제를 해결했으니 이제 제외할 필요가
-          // 없어서 없앴습니다. 이제 QR코드 영역도 펼쳐진 상태 그대로
-          // 캡처에 포함됩니다.)
-        }).then(function (canvas) {
-          var dataUrl = canvas.toDataURL('image/jpeg', 0.3);
-          feedbackModal.style.display = 'flex';
-          feedbackStatus.textContent = '전송 중... (캡처가 있으면 조금 더 걸릴 수 있어요)';
-          sendFeedback(dataUrl, false);
-        });
+        captureRealScreenshot()
+          .then(function (dataUrl) {
+            feedbackModal.style.display = 'flex';
+            feedbackStatus.textContent = '전송 중...';
+            sendFeedback(dataUrl, false);
+          })
+          .catch(function () {
+            // 화면 공유 창에서 "취소"를 누르거나, 권한을 거부한 경우입니다.
+            // 이 경우엔 캡처 없이 텍스트만 보냅니다.
+            feedbackModal.style.display = 'flex';
+            feedbackStatus.textContent = '화면 공유가 취소되어, 캡처 없이 전송합니다...';
+            sendFeedback('', true);
+          });
       } else {
         sendFeedback('', false);
       }
     });
   </script>
-  <div id="versionTag">v2026-09-24-10</div>
+  <div id="versionTag">v2026-09-24-11</div>
 </body>
 </html>
