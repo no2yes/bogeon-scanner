@@ -237,6 +237,11 @@
       }
     });  
         // ── 피드백 기능 ──────────────────────────────
+    // 피드백은 이 화면 자체의 데이터(GAS_URL)가 아니라, 여러 프로젝트를 모아서
+    // 관리하는 개발자콘솔(no2yes1 계정)로 보냅니다.
+    var DEV_CONSOLE_URL = 'https://script.google.com/macros/s/AKfycbyaPRuDlrSFI9pEkC7lluAGI3ql-pnBRuLRGGt5L4ZHgXabZYau251ClzYyHPahRgZB/exec';
+    var PROJECT_NAME = '보건실 관리시스템'; // 개발자콘솔 화면에서 이 이름으로 필터링됩니다.
+
     var feedbackFab = document.getElementById('feedbackFab');
     var feedbackModal = document.getElementById('feedbackModal');
     var feedbackText = document.getElementById('feedbackText');
@@ -253,11 +258,12 @@
     // 실제로 Apps Script에 피드백을 전송하는 함수입니다.
     // screenshotDataUrl은 이미지 데이터(문자열)이거나, 캡처를 안 보내는 경우 빈 문자열입니다.
     function sendFeedback(screenshotDataUrl) {
-      fetch(GAS_URL, {
+      fetch(DEV_CONSOLE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
-          type: 'feedback', // 약품 등록(doPost)과 구분하기 위한 표시입니다.
+          type: 'feedback',
+          project: PROJECT_NAME, // 어느 프로젝트에서 온 피드백인지 표시
           message: feedbackText.value.trim(),
           screenshot: screenshotDataUrl || '',
           page: window.location.href
