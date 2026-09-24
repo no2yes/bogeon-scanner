@@ -347,6 +347,7 @@
     });
 
     feedbackFab.addEventListener('click', function () {
+      includeScreenshot.checked = true; // 매번 새로 열 때 항상 체크된 상태로 시작합니다.
       feedbackModal.style.display = 'flex';
     });
     document.getElementById('feedbackCancel').addEventListener('click', function () {
@@ -364,17 +365,32 @@
       var loadingText = document.querySelector('#feedbackLoadingOverlay .loading-text');
       var loadingSub = document.querySelector('#feedbackLoadingOverlay .loading-sub');
 
+      // 글 내용을 저장하는 요청입니다. 구글 Apps Script가 가끔 일시적으로
+      // 응답을 못 줄 때가 있어서(저희 쪽 문제가 아닌 구글 인프라 변수),
+      // 처음 실패하면 0.8초 후 한 번 더 자동으로 시도합니다.
+      function saveTextStep(attempt) {
+        return fetch(DEV_CONSOLE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            type: 'feedback',
+            project: PROJECT_NAME,
+            message: feedbackText.value.trim(),
+            page: window.location.href
+          })
+        }).catch(function (err) {
+          if (attempt < 2) {
+            loadingSub.textContent = '전송이 지연되어 다시 시도합니다...';
+            return new Promise(function (resolve) {
+              setTimeout(function () { resolve(saveTextStep(attempt + 1)); }, 800);
+            });
+          }
+          throw err;
+        });
+      }
+
       // 1단계: 글 내용 먼저 전송
-      fetch(DEV_CONSOLE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          type: 'feedback',
-          project: PROJECT_NAME,
-          message: feedbackText.value.trim(),
-          page: window.location.href
-        })
-      })
+      saveTextStep(1)
         .then(function (res) { return res.json(); })
         .then(function (data) {
           if (!data || !data.ok) {
