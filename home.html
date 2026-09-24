@@ -48,6 +48,17 @@
 <body>
   <h1>보건실 관리시스템</h1>
 
+  <div class="stat-cards">
+    <div class="stat-card">
+      <div class="stat-label">전체 등록 약품</div>
+      <div class="stat-value" id="totalCount">–</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">유통기한 임박 (30일 이내)</div>
+      <div class="stat-value warn" id="expiringCount">–</div>
+    </div>
+  </div>
+
   <!-- PC에서 이 화면을 볼 때, 스마트폰으로 같은 화면을 바로 열 수 있게 QR코드를
        상시 보여줍니다. 폰에서 볼 땐 이미 폰이니 굳이 필요 없어서 숨깁니다. -->
   <div id="homeQrBox" style="display: none; text-align: center; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
