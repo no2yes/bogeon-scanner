@@ -42,6 +42,9 @@
   th, td { padding: 10px 12px; font-size: 13px; text-align: left; border-bottom: 1px solid #eee; }
   th { background: #FAF9F5; color: #666; }
   .dday-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(183,121,31,0.12); color: #B7791F; font-size: 12px; font-weight: 600; }
+  /* 이미 유통기한이 지난("지남") 항목은 임박(D-1 등)보다 더 위급하므로,
+     주황색이 아니라 빨간색으로 눈에 띄게 구분합니다. */
+  .dday-badge.expired { background: rgba(220,38,38,0.12); color: #DC2626; }
   #empty { font-size: 13px; color: #999; margin-top: 12px; text-align: center; }
 </style>
 </head>
@@ -145,8 +148,12 @@
         var tbody = document.getElementById('tbody');
         list.forEach(function (item) {
           var tr = document.createElement('tr');
-          var ddayText = item.dday < 0 ? '지남' : ('D-' + item.dday);
-          tr.innerHTML = '<td>' + item.name + '</td><td>' + item.expiry + '</td><td><span class="dday-badge">' + ddayText + '</span></td>';
+          var isExpired = item.dday < 0;
+          var ddayText = isExpired ? '지남' : ('D-' + item.dday);
+          // 지난 항목이면 "dday-badge expired" 두 클래스를 같이 줘서 빨간색이 적용되게 하고,
+          // 아직 안 지났으면 기존처럼 "dday-badge"만 줘서 주황색을 유지합니다.
+          var badgeClass = isExpired ? 'dday-badge expired' : 'dday-badge';
+          tr.innerHTML = '<td>' + item.name + '</td><td>' + item.expiry + '</td><td><span class="' + badgeClass + '">' + ddayText + '</span></td>';
           tbody.appendChild(tr);
         });
         document.getElementById('table').style.display = 'table';
