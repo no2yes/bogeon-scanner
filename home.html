@@ -72,6 +72,22 @@
   #feedbackStatus { font-size: 12px; color: #888; margin-top: 8px; min-height: 16px; }
   .feedback-actions { display: flex; gap: 8px; margin-top: 12px; }
   .feedback-actions button { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none; }
+
+  /* 전송 중 화면 전체(피드백 창 포함)를 덮는 큼직한 로딩 표시입니다.
+     이게 떠 있는 동안은 뒤에 있는 어떤 버튼도 물리적으로 클릭할 수 없습니다
+     (오버레이가 그 위를 완전히 덮어서 클릭 자체가 오버레이한테 먼저 잡히기 때문입니다). */
+  #feedbackLoadingOverlay {
+    position: fixed; inset: 0; background: rgba(247, 245, 239, 0.95);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 700;
+  }
+  #feedbackLoadingOverlay .spinner {
+    width: 56px; height: 56px; border: 5px solid rgba(47, 111, 94, 0.15);
+    border-top-color: #2F6F5E; border-radius: 50%; animation: fbspin 0.8s linear infinite;
+  }
+  @keyframes fbspin { to { transform: rotate(360deg); } }
+  #feedbackLoadingOverlay .loading-text { margin-top: 16px; font-size: 17px; font-weight: 600; color: #1F2A24; }
+  #feedbackLoadingOverlay .loading-sub { margin-top: 6px; font-size: 13px; color: #888; }
   #feedbackCancel { background: #eee; color: #333; }
   #feedbackSubmit { background: #2F6F5E; color: #fff; font-weight: 600; }
 </style>
@@ -141,6 +157,14 @@
         <button type="button" id="feedbackSubmit">보내기</button>
       </div>
     </div>
+  </div>
+    <!-- 전송 중에만 나타나는 전체 화면 로딩 표시입니다. z-index가 피드백 창보다
+       높아서(700 vs 600), 떠 있는 동안은 입력창의 "보내기"·"취소" 버튼이
+       화면에 보여도 실제로는 이 오버레이가 클릭을 가로채서 눌리지 않습니다. -->
+  <div id="feedbackLoadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">전송 중이에요...</div>
+    <div class="loading-sub">캡처가 있으면 조금 더 걸릴 수 있어요</div>
   </div>
 
   <script>
@@ -258,6 +282,12 @@
     // 실제로 Apps Script에 피드백을 전송하는 함수입니다.
     // screenshotDataUrl은 이미지 데이터(문자열)이거나, 캡처를 안 보내는 경우 빈 문자열입니다.
     function sendFeedback(screenshotDataUrl) {
+      // 전송 시작 — 오버레이를 띄워서 화면을 덮고, 버튼도 물리적으로 눌러지지
+      // 않게 비활성화(disabled)합니다.
+      document.getElementById('feedbackLoadingOverlay').style.display = 'flex';
+      document.getElementById('feedbackSubmit').disabled = true;
+      document.getElementById('feedbackCancel').disabled = true;
+
       fetch(DEV_CONSOLE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -271,6 +301,11 @@
       })
         .then(function (res) { return res.json(); })
         .then(function (data) {
+          // 성공이든 실패든, 응답을 받았으면 오버레이는 무조건 걷어냅니다.
+          document.getElementById('feedbackLoadingOverlay').style.display = 'none';
+          document.getElementById('feedbackSubmit').disabled = false;
+          document.getElementById('feedbackCancel').disabled = false;
+
           if (data && data.ok) {
             feedbackStatus.textContent = '접수됐습니다. 감사합니다!';
             feedbackText.value = '';
@@ -283,6 +318,11 @@
           }
         })
         .catch(function () {
+          // 통신 자체가 실패한 경우에도 오버레이를 반드시 꺼줘야, 화면이
+          // 계속 잠긴 것처럼 보이지 않습니다.
+          document.getElementById('feedbackLoadingOverlay').style.display = 'none';
+          document.getElementById('feedbackSubmit').disabled = false;
+          document.getElementById('feedbackCancel').disabled = false;
           feedbackStatus.textContent = '전송 실패 (네트워크 오류)';
         });
     }
