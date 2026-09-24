@@ -338,19 +338,25 @@
           }
         })
         .catch(function () {
+          // 캡처를 포함한 첫 시도가 실패했다면, 잠깐(0.5초) 숨을 돌린 뒤
+          // 캡처를 빼고 한 번 더 자동으로 시도합니다. 구글 Apps Script 웹앱은
+          // 연달아 요청이 몰리면 가끔 응답 처리가 불안정해지는 경우가 있어서,
+          // 이 짧은 간격이 도움이 됩니다.
+          if (!isRetry && screenshotDataUrl) {
+            feedbackStatus.textContent = '캡처 전송이 지연되어, 캡처 없이 다시 시도합니다...';
+            setTimeout(function () {
+              sendFeedback('', true);
+            }, 500);
+            return;
+          }
+
           document.getElementById('feedbackLoadingOverlay').style.display = 'none';
           document.getElementById('feedbackSubmit').disabled = false;
           document.getElementById('feedbackCancel').disabled = false;
-
-          // 캡처를 포함한 첫 시도가 실패했다면, 캡처를 빼고 한 번 더 자동으로
-          // 시도합니다. 이렇게 하면 최소한 글 내용만큼은 거의 확실히 저장됩니다.
-          // (이미 캡처 없이 시도했는데도 실패한 거라면, 재시도하지 않고 진짜 실패로 안내합니다.)
-          if (!isRetry && screenshotDataUrl) {
-            feedbackStatus.textContent = '캡처 전송이 지연되어, 캡처 없이 다시 시도합니다...';
-            sendFeedback('', true);
-          } else {
-            feedbackStatus.textContent = '전송 실패 (네트워크 오류) — 잠시 후 다시 시도해 주세요.';
-          }
+          // 화면엔 실패로 떴지만, 서버 쪽에는 실제로 이미 저장된 경우가 종종 있습니다
+          // (구글 웹앱의 응답 전달 단계만 불안정한 것일 뿐, 저장 자체는 성공하기도 합니다).
+          // 그래서 "완전히 날아갔다"고 단정하지 않고, 확인을 유도하는 문구로 안내합니다.
+          feedbackStatus.textContent = '전송이 지연되고 있어요. 실제로는 저장됐을 수 있으니, 잠시 후 개발자콘솔에서 확인해 주세요.';
         });
     }
 
@@ -386,6 +392,6 @@
       }
     });
   </script>
-  <div id="versionTag">v2026-09-24-5</div>
+  <div id="versionTag">v2026-09-24-6</div>
 </body>
 </html>
