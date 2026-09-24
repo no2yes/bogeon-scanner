@@ -376,18 +376,12 @@
         html2canvas(document.body, {
           scale: 0.6,
           useCORS: true,
-          // 기본값으로는 "지금 화면에 보이는 높이(뷰포트)"까지만 캡처되어서,
-          // 스크롤해야 보이는 아래쪽 내용(QR코드 영역 등)이 잘려나가는
-          // 경우가 있었습니다. 페이지 전체 높이(scrollHeight)를 명시적으로
-          // 지정해서, 스크롤 위치와 상관없이 처음부터 끝까지 다 캡처되게 합니다.
           height: document.body.scrollHeight,
-          windowHeight: document.body.scrollHeight,
-          // QR코드 영역(homeQrBox)은 외부 도메인(api.qrserver.com) 이미지를 담고 있어서
-          // html2canvas가 이걸 읽으려다 최대 15초까지 기다리며 멈추는 원인이었습니다.
-          // 피드백 캡처에 QR코드가 찍힐 필요는 없으니, 이 부분은 아예 캡처에서 제외합니다.
-          ignoreElements: function (el) {
-            return el.id === 'homeQrBox';
-          }
+          windowHeight: document.body.scrollHeight
+          // (참고: 예전엔 QR코드 영역을 ignoreElements로 아예 캡처에서
+          // 뺐었는데, useCORS로 그 문제를 해결했으니 이제 제외할 필요가
+          // 없어서 없앴습니다. 이제 QR코드 영역도 펼쳐진 상태 그대로
+          // 캡처에 포함됩니다.)
         }).then(function (canvas) {
           var dataUrl = canvas.toDataURL('image/jpeg', 0.3);
           feedbackModal.style.display = 'flex';
@@ -399,6 +393,6 @@
       }
     });
   </script>
-  <div id="versionTag">v2026-09-24-9</div>
+  <div id="versionTag">v2026-09-24-10</div>
 </body>
 </html>
