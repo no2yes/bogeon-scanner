@@ -288,9 +288,8 @@
 
     // 실제로 Apps Script에 피드백을 전송하는 함수입니다.
     // screenshotDataUrl은 이미지 데이터(문자열)이거나, 캡처를 안 보내는 경우 빈 문자열입니다.
-    function sendFeedback(screenshotDataUrl) {
-      // 전송 시작 — 오버레이를 띄워서 화면을 덮고, 버튼도 물리적으로 눌러지지
-      // 않게 비활성화(disabled)합니다.
+    // isRetry: 캡처 포함 전송이 실패해서, 캡처를 빼고 다시 시도하는 중인지 표시합니다.
+    function sendFeedback(screenshotDataUrl, isRetry) {
       document.getElementById('feedbackLoadingOverlay').style.display = 'flex';
       document.getElementById('feedbackSubmit').disabled = true;
       document.getElementById('feedbackCancel').disabled = true;
@@ -300,7 +299,7 @@
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           type: 'feedback',
-          project: PROJECT_NAME, // 어느 프로젝트에서 온 피드백인지 표시
+          project: PROJECT_NAME,
           message: feedbackText.value.trim(),
           screenshot: screenshotDataUrl || '',
           page: window.location.href
@@ -308,29 +307,37 @@
       })
         .then(function (res) { return res.json(); })
         .then(function (data) {
-          // 성공이든 실패든, 응답을 받았으면 오버레이는 무조건 걷어냅니다.
           document.getElementById('feedbackLoadingOverlay').style.display = 'none';
           document.getElementById('feedbackSubmit').disabled = false;
           document.getElementById('feedbackCancel').disabled = false;
 
           if (data && data.ok) {
-            feedbackStatus.textContent = '접수됐습니다. 감사합니다!';
+            feedbackStatus.textContent = isRetry
+              ? '접수됐습니다 (캡처 없이 텍스트만 저장됨)'
+              : '접수됐습니다. 감사합니다!';
             feedbackText.value = '';
             setTimeout(function () {
               feedbackModal.style.display = 'none';
               feedbackStatus.textContent = '';
-            }, 1500);
+            }, 1800);
           } else {
             feedbackStatus.textContent = '전송 실패: ' + (data && data.error ? data.error : '알 수 없는 오류');
           }
         })
         .catch(function () {
-          // 통신 자체가 실패한 경우에도 오버레이를 반드시 꺼줘야, 화면이
-          // 계속 잠긴 것처럼 보이지 않습니다.
           document.getElementById('feedbackLoadingOverlay').style.display = 'none';
           document.getElementById('feedbackSubmit').disabled = false;
           document.getElementById('feedbackCancel').disabled = false;
-          feedbackStatus.textContent = '전송 실패 (네트워크 오류)';
+
+          // 캡처를 포함한 첫 시도가 실패했다면, 캡처를 빼고 한 번 더 자동으로
+          // 시도합니다. 이렇게 하면 최소한 글 내용만큼은 거의 확실히 저장됩니다.
+          // (이미 캡처 없이 시도했는데도 실패한 거라면, 재시도하지 않고 진짜 실패로 안내합니다.)
+          if (!isRetry && screenshotDataUrl) {
+            feedbackStatus.textContent = '캡처 전송이 지연되어, 캡처 없이 다시 시도합니다...';
+            sendFeedback('', true);
+          } else {
+            feedbackStatus.textContent = '전송 실패 (네트워크 오류) — 잠시 후 다시 시도해 주세요.';
+          }
         });
     }
 
@@ -348,7 +355,7 @@
         // scale을 0.6→0.35로, 화질을 0.7→0.5로 낮춰서 전송 용량을 더 줄입니다.
         // (화면을 알아볼 수 있는 정도면 충분하고, 용량이 작을수록 전송·저장이 빨라집니다)
         html2canvas(document.body, {
-          scale: 0.35,
+          scale: 0.2,
           // QR코드 영역(homeQrBox)은 외부 도메인(api.qrserver.com) 이미지를 담고 있어서
           // html2canvas가 이걸 읽으려다 최대 15초까지 기다리며 멈추는 원인이었습니다.
           // 피드백 캡처에 QR코드가 찍힐 필요는 없으니, 이 부분은 아예 캡처에서 제외합니다.
@@ -356,16 +363,16 @@
             return el.id === 'homeQrBox';
           }
         }).then(function (canvas) {
-          var dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+          var dataUrl = canvas.toDataURL('image/jpeg', 0.35);
           feedbackModal.style.display = 'flex';
           feedbackStatus.textContent = '전송 중... (캡처가 있으면 조금 더 걸릴 수 있어요)';
-          sendFeedback(dataUrl);
+          sendFeedback(dataUrl, false);
         });
       } else {
-        sendFeedback('');
+        sendFeedback('', false);
       }
     });
   </script>
-  <div id="versionTag">v2026-09-24-2</div>
+  <div id="versionTag">v2026-09-24-3</div>
 </body>
 </html>
