@@ -60,10 +60,16 @@
   </div>
 
   <!-- PC에서 이 화면을 볼 때, 스마트폰으로 같은 화면을 바로 열 수 있게 QR코드를
-       상시 보여줍니다. 폰에서 볼 땐 이미 폰이니 굳이 필요 없어서 숨깁니다. -->
-  <div id="homeQrBox" style="display: none; text-align: center; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">스마트폰으로 이 화면 바로 열기</div>
-    <img id="homeQrImg" width="160" height="160" alt="홈 화면 QR코드">
+       보여주는 영역입니다. 평소엔 작은 버튼 한 줄만 차지하고, 눌러야 QR이 펼쳐지게
+       해서 공간을 아낍니다. 폰에서 볼 땐 이 영역 자체가 아예 안 보입니다. -->
+  <div id="homeQrBox" style="display: none; margin-bottom: 20px;">
+    <button type="button" id="qrToggleBtn" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 10px; border: 1px solid #eee; background: #fff; font-size: 13px; color: #666; cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none;">
+      <span>스마트폰으로 이 화면 바로 열기</span>
+      <span id="qrToggleArrow">▼</span>
+    </button>
+    <div id="qrContent" style="display: none; text-align: center; background: #fff; border: 1px solid #eee; border-top: none; border-radius: 0 0 10px 10px; padding: 20px;">
+      <img id="homeQrImg" width="160" height="160" alt="홈 화면 QR코드">
+    </div>
   </div>
 
   <!-- 스캐너 페이지(index.html)로 이동하는 버튼입니다. 같은 저장소 안에 있으므로
@@ -91,12 +97,31 @@
     // 접속한 기기가 PC인지 모바일인지 판별합니다.
     var isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
-    // PC일 때만, 이 페이지 자체의 주소로 QR코드를 만들어서 보여줍니다.
+    // PC일 때만, 접었다 펼 수 있는 QR 영역을 보여줍니다. 평소엔 접힌 상태로
+    // 시작해서(qrContent가 display:none) 화면 공간을 아낍니다.
     if (!isMobileDevice) {
-      var cleanHomeUrl = window.location.href.split('?')[0];
-      document.getElementById('homeQrImg').src =
-        'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(cleanHomeUrl);
       document.getElementById('homeQrBox').style.display = 'block';
+
+      var qrToggleBtn = document.getElementById('qrToggleBtn');
+      var qrContent = document.getElementById('qrContent');
+      var qrToggleArrow = document.getElementById('qrToggleArrow');
+      var qrImageLoaded = false; // QR 이미지를 이미 한 번 불러왔는지 표시 (중복 요청 방지용)
+
+      qrToggleBtn.addEventListener('click', function () {
+        var isOpen = qrContent.style.display === 'block';
+        qrContent.style.display = isOpen ? 'none' : 'block';
+        qrToggleArrow.textContent = isOpen ? '▼' : '▲';
+
+        // 처음 펼칠 때만 QR 이미지를 실제로 만들어서 불러옵니다.
+        // (미리 만들어두지 않는 이유: 어차피 안 펼치는 사람도 있을 텐데,
+        // 매번 페이지를 열 때마다 QR 이미지를 미리 받아오면 낭비이기 때문입니다.)
+        if (!qrImageLoaded) {
+          var cleanHomeUrl = window.location.href.split('?')[0];
+          document.getElementById('homeQrImg').src =
+            'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(cleanHomeUrl);
+          qrImageLoaded = true;
+        }
+      });
     }
     // google.script.run은 Apps Script가 직접 서빙하는 페이지 안에서만 쓸 수 있는
     // 기능이라, 이 페이지(GitHub Pages)에서는 쓸 수 없습니다. 대신 일반적인
