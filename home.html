@@ -382,7 +382,7 @@
             return el.id === 'homeQrBox';
           }
         }).then(function (canvas) {
-          var dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+          var dataUrl = canvas.toDataURL('image/jpeg', 0.3);
           feedbackModal.style.display = 'flex';
           feedbackStatus.textContent = '전송 중... (캡처가 있으면 조금 더 걸릴 수 있어요)';
           sendFeedback(dataUrl, false);
@@ -392,6 +392,6 @@
       }
     });
   </script>
-  <div id="versionTag">v2026-09-24-6</div>
+  <div id="versionTag">v2026-09-24-7</div>
 </body>
 </html>
