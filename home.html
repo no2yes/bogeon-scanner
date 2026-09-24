@@ -44,7 +44,9 @@
   .dday-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(183,121,31,0.12); color: #B7791F; font-size: 12px; font-weight: 600; }
   /* 이미 유통기한이 지난("지남") 항목은 임박(D-1 등)보다 더 위급하므로,
      주황색이 아니라 빨간색으로 눈에 띄게 구분합니다. */
-  .dday-badge.expired { background: rgba(220,38,38,0.12); color: #DC2626; }
+  /* 연한 빨간 글씨 대신, 진한 빨간 배경 + 흰 글씨로 아예 형태를 다르게 만들어서
+     주황색 배지와 한눈에 구분되게 합니다. */
+  .dday-badge.expired { background: #DC2626; color: #fff; font-weight: 700; }
   #empty { font-size: 13px; color: #999; margin-top: 12px; text-align: center; }
 </style>
 </head>
