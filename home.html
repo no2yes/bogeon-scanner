@@ -368,7 +368,7 @@
         // scale을 0.6→0.35로, 화질을 0.7→0.5로 낮춰서 전송 용량을 더 줄입니다.
         // (화면을 알아볼 수 있는 정도면 충분하고, 용량이 작을수록 전송·저장이 빨라집니다)
         html2canvas(document.body, {
-          scale: 0.2,
+          scale: 0.6,
           // QR코드 영역(homeQrBox)은 외부 도메인(api.qrserver.com) 이미지를 담고 있어서
           // html2canvas가 이걸 읽으려다 최대 15초까지 기다리며 멈추는 원인이었습니다.
           // 피드백 캡처에 QR코드가 찍힐 필요는 없으니, 이 부분은 아예 캡처에서 제외합니다.
@@ -376,7 +376,7 @@
             return el.id === 'homeQrBox';
           }
         }).then(function (canvas) {
-          var dataUrl = canvas.toDataURL('image/jpeg', 0.35);
+          var dataUrl = canvas.toDataURL('image/jpeg', 0.65);
           feedbackModal.style.display = 'flex';
           feedbackStatus.textContent = '전송 중... (캡처가 있으면 조금 더 걸릴 수 있어요)';
           sendFeedback(dataUrl, false);
@@ -386,6 +386,6 @@
       }
     });
   </script>
-  <div id="versionTag">v2026-09-24-4</div>
+  <div id="versionTag">v2026-09-24-5</div>
 </body>
 </html>
