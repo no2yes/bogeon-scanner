@@ -95,7 +95,11 @@
   .nursing-rawtext { background: #FAF9F5; border-radius: 8px; padding: 10px; color: #555; }
   #nursingEmpty { font-size: 13px; color: #999; margin-top: 12px; text-align: center; }
   /* 보건일지 선택 상세내역 기능 */
-  .nursing-select-cb { flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
+  .nursing-select-label {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; margin: -8px; cursor: pointer;
+  }
+  .nursing-select-cb { width: 18px; height: 18px; cursor: pointer; }
   #nursingSelectionBar {
     display: none; align-items: center; justify-content: space-between;
     background: #EAF2EE; border: 1px solid #2F6F5E; border-radius: 10px;
@@ -477,7 +481,7 @@
 
         row.innerHTML =
           '<div class="nursing-top">' +
-          '<input type="checkbox" class="nursing-select-cb" data-key="' + itemKey + '"' + (selectedNursingItems.has(itemKey) ? ' checked' : '') + '>' +
+          '<label class="nursing-select-label"><input type="checkbox" class="nursing-select-cb" data-key="' + itemKey + '"' + (selectedNursingItems.has(itemKey) ? ' checked' : '') + '></label>' +
           '<span class="nursing-child">' + item.childName + '</span>' +
           '<span class="nursing-caretext">' + josa + ' 정성껏 돌봐주었어요</span>' +
           '<span class="nursing-badge">' + badge + '</span>' +
@@ -499,8 +503,11 @@
           reportEl.style.display = reportEl.style.display === 'block' ? 'none' : 'block';
         });
 
-        row.querySelector('.nursing-select-cb').addEventListener('click', function (e) {
+        row.querySelector('.nursing-select-label').addEventListener('click', function (e) {
           e.stopPropagation();
+        });
+
+        row.querySelector('.nursing-select-cb').addEventListener('click', function (e) {
           var key = itemKey;
           if (e.target.checked) {
             selectedNursingItems.set(key, {
