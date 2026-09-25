@@ -73,6 +73,14 @@
     z-index: 700;
   }
   #loadingOverlay .loading-text { margin-top: 20px; font-size: 18px; font-weight: 700; color: #1F2A24; }
+
+  /* 인쇄할 때는 버튼·입력창·탭 같은 조작용 요소를 다 숨기고, 결과 내용만 보여줍니다. */
+  @media print {
+    a.back-link, #reportTypeTabs, .field-box, .copy-btn, #loadingOverlay {
+      display: none !important;
+    }
+    body { background: #fff; padding: 0; }
+  }
 </style>
 </head>
 <body>
@@ -105,7 +113,10 @@
   <div class="field-box" id="weeklyResultBox">
     <label>주간 보고서</label>
     <textarea id="resultText"></textarea>
-    <button type="button" id="copyWeeklyBtn" class="copy-btn">📋 아래 내용 전체 복사</button>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button type="button" id="copyWeeklyBtn" class="copy-btn" style="margin-top:0;">📋 아래 내용 전체 복사</button>
+      <button type="button" id="printWeeklyBtn" class="copy-btn" style="margin-top:0; border-color:#666; color:#666;">🖨️ 인쇄</button>
+    </div>
   </div>
 
   <!-- ── 월별 보고서 결과: 그래프 대시보드 + 본문 요약(복사용) ── -->
@@ -126,10 +137,18 @@
       <canvas id="childChart"></canvas>
     </div>
 
+    <div class="chart-box">
+      <h2>🩹 주요 증상 TOP 5</h2>
+      <canvas id="symptomChart"></canvas>
+    </div>
+
     <div class="text-summary-box">
       <label>보고서 본문(복사용 텍스트 요약)</label>
       <textarea id="monthlyResultText" style="width:100%; box-sizing:border-box; min-height:220px; background:#FAF9F5; border:1px solid #eee; border-radius:10px; padding:14px; font-size:15px; line-height:1.7; white-space:pre-wrap; font-family:inherit; color:#1F2A24; resize:vertical;"></textarea>
-      <button type="button" id="copyMonthlyBtn" class="copy-btn">📋 보고서 본문 복사</button>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button type="button" id="copyMonthlyBtn" class="copy-btn" style="margin-top:0;">📋 보고서 본문 복사</button>
+        <button type="button" id="printMonthlyBtn" class="copy-btn" style="margin-top:0; border-color:#666; color:#666;">🖨️ 전체 인쇄</button>
+      </div>
     </div>
   </div>
 
@@ -144,6 +163,7 @@
     var reportType = 'weekly';
     var dailyChartInstance = null;
     var childChartInstance = null;
+    var symptomChartInstance = null;
 
     var tabWeekly = document.getElementById('tabWeekly');
     var tabMonthly = document.getElementById('tabMonthly');
@@ -319,6 +339,48 @@
           scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
       });
+
+      // 그래프 3: 주요 증상 TOP 5
+      // 증상 문장은 매번 표현이 조금씩 다르게 저장되어 있어서(예: "넘어짐, 무릎 찰과상"),
+      // 문장 전체가 아니라 단어 단위로 쪼갠 뒤, 자주 등장하는 단어를 세는 방식으로
+      // "자주 나오는 증상"을 뽑아냅니다.
+      var wordCounts = {};
+      var stopWords = ['및', '후', '등', '에서', '으로', '동안', '함', '중'];
+
+      data.items.forEach(function (item) {
+        if (!item.symptom) return;
+        var words = item.symptom.split(/[,\s\/·]+/);
+        words.forEach(function (w) {
+          w = w.trim();
+          if (w.length < 2 || stopWords.indexOf(w) !== -1) return;
+          wordCounts[w] = (wordCounts[w] || 0) + 1;
+        });
+      });
+
+      var wordEntries = Object.keys(wordCounts).map(function (w) {
+        return { word: w, count: wordCounts[w] };
+      });
+      wordEntries.sort(function (a, b) { return b.count - a.count; });
+      var topWords = wordEntries.slice(0, 5);
+
+      if (symptomChartInstance) symptomChartInstance.destroy();
+      symptomChartInstance = new Chart(document.getElementById('symptomChart'), {
+        type: 'bar',
+        data: {
+          labels: topWords.map(function (w) { return w.word; }),
+          datasets: [{
+            label: '언급 횟수',
+            data: topWords.map(function (w) { return w.count; }),
+            backgroundColor: '#DC2626'
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+      });
     }
 
     // 개조식 텍스트 요약 (주간·월별 공통으로 씁니다)
@@ -367,6 +429,16 @@
     }
     setupCopyButton('copyWeeklyBtn', 'resultText');
     setupCopyButton('copyMonthlyBtn', 'monthlyResultText');
+
+    // 인쇄 버튼은 그냥 브라우저 기본 인쇄 기능을 그대로 씁니다.
+    // 어느 쪽 결과 화면이 지금 보이는지는 이미 display 속성으로 정해져 있으니,
+    // 인쇄 시 CSS(@media print)가 버튼·입력창만 숨기고 나머지는 그대로 인쇄합니다.
+    document.getElementById('printWeeklyBtn').addEventListener('click', function () {
+      window.print();
+    });
+    document.getElementById('printMonthlyBtn').addEventListener('click', function () {
+      window.print();
+    });
   </script>
 </body>
 </html>
