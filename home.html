@@ -280,6 +280,8 @@
     tabBtnMeds.addEventListener('click', function () { showTab('meds'); });
 
     // ── 보건일지 목록 불러오기 ──────────────────────────────
+    var nursingListMinHeight = 0; // 10개(꽉 찬 페이지) 기준 높이를 여기 기억해둡니다.
+
     function renderNursingList(items) {
       var listEl = document.getElementById('nursingList');
       var emptyEl = document.getElementById('nursingEmpty');
@@ -287,6 +289,7 @@
 
       if (!items || items.length === 0) {
         emptyEl.textContent = '등록된 보건일지가 없습니다.';
+        listEl.style.minHeight = nursingListMinHeight + 'px'; // 게시물이 없어도 자리는 유지
         return;
       }
       emptyEl.style.display = 'none';
@@ -327,6 +330,17 @@
 
         listEl.appendChild(row);
       });
+
+      // 지금이 "꽉 찬 페이지"(10개)라면, 그 실제 높이를 기준값으로 기억해둡니다.
+      // 나중에 마지막 페이지처럼 개수가 적게 나와도, 이 높이를 그대로
+      // min-height로 적용해서 목록 칸(그리고 옆에서 높이를 맞추는 달력)이
+      // 페이지마다 줄었다 늘었다 하지 않게 합니다.
+      if (items.length >= nursingPageSize) {
+        nursingListMinHeight = listEl.scrollHeight;
+      }
+      if (nursingListMinHeight > 0) {
+        listEl.style.minHeight = nursingListMinHeight + 'px';
+      }
     }
 
     var nursingCurrentPage = 1;
