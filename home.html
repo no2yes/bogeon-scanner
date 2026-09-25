@@ -583,15 +583,18 @@
 
     var nursingListPromise = loadNursingPage(1);
 
-    // 오늘/이번 주/이번 달 방문 아동 수(중복 인원 제외)를 불러와 카드에 채웁니다.
-    fetch(GAS_URL + '?action=nursingQuickStats')
-      .then(function (res) { return res.json(); })
-      .then(function (stats) {
-        document.getElementById('quickStatToday').textContent = stats.today;
-        document.getElementById('quickStatWeek').textContent = stats.week;
-        document.getElementById('quickStatMonth').textContent = stats.month;
-      })
-      .catch(function () {});
+    // 오늘/이번 주/이번 달 방문건수를 불러와 카드에 채웁니다.
+    function loadNursingQuickStats() {
+      fetch(GAS_URL + '?action=nursingQuickStats')
+        .then(function (res) { return res.json(); })
+        .then(function (stats) {
+          document.getElementById('quickStatToday').textContent = stats.today;
+          document.getElementById('quickStatWeek').textContent = stats.week;
+          document.getElementById('quickStatMonth').textContent = stats.month;
+        })
+        .catch(function () {});
+    }
+    loadNursingQuickStats();
 
     // ── 이번 달 달력 (이전/다음 버튼으로 다른 달도 볼 수 있습니다) ──────────────────────────────
     var now = new Date();
