@@ -256,14 +256,12 @@
 
         <div class="nursing-list-header">
           <h2 style="margin:0;">최근 보건일지</h2>
-          <div style="display:flex; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span id="nursingSelectionCount" style="display:none; font-size:12px; color:#2F6F5E; font-weight:600; white-space:nowrap;"></span>
+            <button type="button" id="nursingDetailBtn" style="display:none; padding:6px 10px; border-radius:999px; border:1px solid #2F6F5E; background:#fff; color:#2F6F5E; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;">선택 상세내역</button>
             <a class="write-log-btn" href="report.html" style="background: #fff; color: #2F6F5E; border: 1px solid #2F6F5E; box-shadow: none;">📊 보고서</a>
             <a class="write-log-btn" href="nursing-log.html">📝 새 일지 작성</a>
           </div>
-        </div>
-        <div id="nursingSelectionBar">
-          <span id="nursingSelectionCount">0건 선택됨</span>
-          <button type="button" id="nursingDetailBtn">선택 상세내역</button>
         </div>
         <div id="nursingListWrapper" style="position: relative;">
           <div id="nursingListLoadingOverlay" class="calendar-loading-overlay">
@@ -432,13 +430,16 @@
     var selectedNursingItems = new Map();
 
     function updateNursingSelectionBar() {
-      var bar = document.getElementById('nursingSelectionBar');
+      var countEl = document.getElementById('nursingSelectionCount');
+      var btnEl = document.getElementById('nursingDetailBtn');
       var count = selectedNursingItems.size;
       if (count > 0) {
-        bar.style.display = 'flex';
-        document.getElementById('nursingSelectionCount').textContent = count + '건 선택됨';
+        countEl.style.display = 'inline';
+        btnEl.style.display = 'inline-block';
+        countEl.textContent = count + '건 선택됨';
       } else {
-        bar.style.display = 'none';
+        countEl.style.display = 'none';
+        btnEl.style.display = 'none';
       }
     }
     function renderNursingList(items) {
