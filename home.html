@@ -154,7 +154,7 @@
     <div class="page-loading-text">정보를 불러오고 있어요...</div>
   </div>
 
-  <h1>보건실 관리시스템</h1>
+  <h1>보건실 관리시스템 <span id="adminNameTag" style="font-size: 13px; font-weight: 500; color: #888;"></span></h1>
 
   <div class="nursing-layout">
     <div class="nursing-left">
@@ -265,6 +265,13 @@
 
   <script>
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
+
+    // ▼▼ 지금은 하드코딩이지만, 나중에 로그인이 연계되면 이 값을 로그인한
+    // 사용자 이름으로 채우도록 바꾸면 됩니다(예: 인증키 로그인 시 입력한 이메일에서
+    // 이름을 가져오거나, 별도 사용자 정보 조회로 대체). ▼▼
+    var ADMIN_NAME = '동영';
+    document.getElementById('adminNameTag').textContent = '(' + ADMIN_NAME + ')';
+
     var isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     if (isMobileDevice) document.body.classList.add('is-mobile');
 
