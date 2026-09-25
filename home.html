@@ -94,7 +94,38 @@
   .nursing-report-text, .nursing-rawtext { line-height: 1.6; white-space: pre-wrap; color: #333; }
   .nursing-rawtext { background: #FAF9F5; border-radius: 8px; padding: 10px; color: #555; }
   #nursingEmpty { font-size: 13px; color: #999; margin-top: 12px; text-align: center; }
-
+  /* 보건일지 선택 상세내역 기능 */
+  .nursing-select-cb { flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
+  #nursingSelectionBar {
+    display: none; align-items: center; justify-content: space-between;
+    background: #EAF2EE; border: 1px solid #2F6F5E; border-radius: 10px;
+    padding: 8px 12px; margin-bottom: 10px; font-size: 13px; color: #2F6F5E;
+  }
+  #nursingDetailBtn {
+    padding: 6px 14px; border-radius: 8px; border: none; background: #2F6F5E;
+    color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+    -webkit-appearance: none; appearance: none;
+  }
+  #detailReportModal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: none; align-items: center; justify-content: center;
+    z-index: 900; padding: 20px; box-sizing: border-box;
+  }
+  #detailReportModal .detail-box {
+    background: #fff; border-radius: 14px; padding: 20px; width: 100%; max-width: 480px;
+    max-height: 80vh; display: flex; flex-direction: column; box-sizing: border-box;
+  }
+  #detailReportText {
+    flex: 1; min-height: 200px; box-sizing: border-box; overflow-y: auto;
+    background: #FAF9F5; border: 1px solid #eee; border-radius: 10px;
+    padding: 14px; font-size: 14px; line-height: 1.7; white-space: pre-wrap; color: #1F2A24;
+    resize: vertical; font-family: inherit;
+  }
+  .detail-modal-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .detail-modal-actions button {
+    flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px;
+    cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none;
+  }
   #qrBox { display: none; text-align: center; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
 
   #homeQrBox { display: none; margin-top: 20px; }
@@ -221,6 +252,10 @@
             <a class="write-log-btn" href="report.html" style="background: #fff; color: #2F6F5E; border: 1px solid #2F6F5E; box-shadow: none;">📊 보고서</a>
             <a class="write-log-btn" href="nursing-log.html">📝 새 일지 작성</a>
           </div>
+        </div>
+        <div id="nursingSelectionBar">
+          <span id="nursingSelectionCount">0건 선택됨</span>
+          <button type="button" id="nursingDetailBtn">선택 상세내역</button>
         </div>
         <div id="nursingListWrapper" style="position: relative;">
           <div id="nursingListLoadingOverlay" class="calendar-loading-overlay">
@@ -373,7 +408,20 @@
     }
     // ── 보건일지 목록 불러오기 ──────────────────────────────
     var nursingListMinHeight = 0; // 꽉 찬 페이지 기준 높이를 여기 기억해둡니다.
+// 선택된 보건일지 항목들을 담아둡니다. 페이지를 넘겨도 유지되도록
+    // 함수 밖(전역)에 둡니다. key → {childName, visitDateTime, report}
+    var selectedNursingItems = new Map();
 
+    function updateNursingSelectionBar() {
+      var bar = document.getElementById('nursingSelectionBar');
+      var count = selectedNursingItems.size;
+      if (count > 0) {
+        bar.style.display = 'flex';
+        document.getElementById('nursingSelectionCount').textContent = count + '건 선택됨';
+      } else {
+        bar.style.display = 'none';
+      }
+    }
     function renderNursingList(items) {
       var listEl = document.getElementById('nursingList');
       var emptyEl = document.getElementById('nursingEmpty');
@@ -402,8 +450,14 @@
         var badge = badgeMap[item.aiUsed] || '';
         var josa = getEulReulJosa(item.childName);
 
+        // 페이지를 넘겨도 선택 상태를 기억할 수 있도록, 방문일시+이름으로
+        // 이 항목만의 고유값을 만듭니다(같은 아이가 같은 분에 두 번 오는
+        // 경우는 실질적으로 없다고 보고 이 값으로 구분합니다).
+        var itemKey = item.visitDateTime + '|' + item.childName;
+
         row.innerHTML =
           '<div class="nursing-top">' +
+          '<input type="checkbox" class="nursing-select-cb" data-key="' + itemKey + '"' + (selectedNursingItems.has(itemKey) ? ' checked' : '') + '>' +
           '<span class="nursing-child">' + item.childName + '</span>' +
           '<span class="nursing-caretext">' + josa + ' 정성껏 돌봐주었어요</span>' +
           '<span class="nursing-badge">' + badge + '</span>' +
@@ -419,9 +473,25 @@
         row.querySelector('.nursing-report-text').textContent = item.report;
         row.querySelector('.nursing-rawtext').textContent = item.rawText || '(원문 없음)';
 
-        row.addEventListener('click', function () {
+        row.addEventListener('click', function (e) {
+          if (e.target.classList.contains('nursing-select-cb')) return; // 체크박스 클릭은 여기서 처리 안 함
           var reportEl = row.querySelector('.nursing-report');
           reportEl.style.display = reportEl.style.display === 'block' ? 'none' : 'block';
+        });
+
+        row.querySelector('.nursing-select-cb').addEventListener('click', function (e) {
+          e.stopPropagation();
+          var key = itemKey;
+          if (e.target.checked) {
+            selectedNursingItems.set(key, {
+              childName: item.childName,
+              visitDateTime: item.visitDateTime,
+              report: item.report
+            });
+          } else {
+            selectedNursingItems.delete(key);
+          }
+          updateNursingSelectionBar();
         });
 
         listEl.appendChild(row);
@@ -1037,7 +1107,41 @@
         sendFeedback('');
       }
     });
+        // 선택한 항목들의 정리된 보고서를 하나로 모아서 보여줍니다.
+    document.getElementById('nursingDetailBtn').addEventListener('click', function () {
+      var entries = Array.from(selectedNursingItems.values());
+      // 방문일시 순서대로 정렬합니다.
+      entries.sort(function (a, b) { return a.visitDateTime < b.visitDateTime ? -1 : 1; });
+
+      var combined = entries.map(function (e) { return e.report; }).join('\n\n────────────────\n\n');
+      document.getElementById('detailReportText').value = combined;
+      document.getElementById('detailReportModal').style.display = 'flex';
+    });
+
+    document.getElementById('detailCloseBtn').addEventListener('click', function () {
+      document.getElementById('detailReportModal').style.display = 'none';
+    });
+
+    document.getElementById('detailCopyBtn').addEventListener('click', function () {
+      var text = document.getElementById('detailReportText').value;
+      navigator.clipboard.writeText(text).then(function () {
+        var btn = document.getElementById('detailCopyBtn');
+        var original = btn.textContent;
+        btn.textContent = '복사됨!';
+        setTimeout(function () { btn.textContent = original; }, 1200);
+      });
+    });
   </script>
   <div id="versionTag">v2026-09-25-1</div>
+    <div id="detailReportModal">
+    <div class="detail-box">
+      <h3 style="margin:0 0 12px; font-size:16px;">선택한 보건일지 상세내역</h3>
+      <textarea id="detailReportText" readonly></textarea>
+      <div class="detail-modal-actions">
+        <button type="button" id="detailCopyBtn" style="border:1px solid #2F6F5E; background:#fff; color:#2F6F5E;">📋 복사</button>
+        <button type="button" id="detailCloseBtn" style="background:#eee; color:#333;">닫기</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
