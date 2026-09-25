@@ -148,7 +148,11 @@
 
       <div class="nursing-right">
         <div class="calendar-box">
-          <div class="calendar-header" id="calendarHeader"></div>
+          <div class="calendar-nav" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+            <button type="button" id="calPrevBtn" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:14px; cursor:pointer; -webkit-appearance:none; appearance:none;">‹</button>
+            <div class="calendar-header" id="calendarHeader" style="margin-bottom:0;"></div>
+            <button type="button" id="calNextBtn" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:14px; cursor:pointer; -webkit-appearance:none; appearance:none;">›</button>
+          </div>
           <div class="calendar-grid" id="calendarGrid"></div>
         </div>
       </div>
@@ -294,37 +298,62 @@
         document.getElementById('nursingEmpty').textContent = '불러오지 못했습니다.';
       });
 
-    // ── 이번 달 달력 ──────────────────────────────
+    // ── 이번 달 달력 (이전/다음 버튼으로 다른 달도 볼 수 있습니다) ──────────────────────────────
+    var now = new Date();
     var calYear = now.getFullYear();
     var calMonth = now.getMonth() + 1; // 1~12
 
-    document.getElementById('calendarHeader').textContent = calYear + '년 ' + calMonth + '월';
+    // 같은 연도의 공휴일 목록은 달을 옮겨도 안 바뀌니, 한 번 받아오면 캐시해서
+    // 매번 다시 요청하지 않게 합니다.
+    var holidayCacheByYear = {};
 
-    // 공휴일·대체공휴일은 Nager.Date(무료, 인증키 불필요, 한국 포함)에서 가져옵니다.
-    var holidayPromise = fetch('https://date.nager.at/api/v3/PublicHolidays/' + calYear + '/KR')
-      .then(function (res) { return res.json(); })
-      .catch(function () { return []; }); // 실패해도 달력 자체는 그려야 하니 빈 배열로 대체합니다.
+    function getHolidaysForYear(year) {
+      if (holidayCacheByYear[year]) return holidayCacheByYear[year];
+      var p = fetch('https://date.nager.at/api/v3/PublicHolidays/' + year + '/KR')
+        .then(function (res) { return res.json(); })
+        .catch(function () { return []; });
+      holidayCacheByYear[year] = p;
+      return p;
+    }
 
-    var countsPromise = fetch(GAS_URL + '?action=nursingLogCounts&year=' + calYear + '&month=' + calMonth)
-      .then(function (res) { return res.json(); })
-      .catch(function () { return {}; });
+    function loadCalendarMonth(year, month) {
+      calYear = year;
+      calMonth = month;
+      document.getElementById('calendarHeader').textContent = year + '년 ' + month + '월';
 
-    Promise.all([holidayPromise, countsPromise]).then(function (results) {
-      var holidays = results[0];
-      var counts = results[1];
+      var countsPromise = fetch(GAS_URL + '?action=nursingLogCounts&year=' + year + '&month=' + month)
+        .then(function (res) { return res.json(); })
+        .catch(function () { return {}; });
 
-      // 이번 달의 공휴일 날짜(일 숫자)만 골라서 Set으로 만듭니다.
-      var holidaySet = new Set();
-      holidays.forEach(function (h) {
-        // h.date는 "2026-09-25" 형태입니다.
-        var parts = h.date.split('-');
-        if (parseInt(parts[0], 10) === calYear && parseInt(parts[1], 10) === calMonth) {
-          holidaySet.add(parseInt(parts[2], 10));
-        }
+      return Promise.all([getHolidaysForYear(year), countsPromise]).then(function (results) {
+        var holidays = results[0];
+        var counts = results[1];
+
+        var holidaySet = new Set();
+        holidays.forEach(function (h) {
+          var parts = h.date.split('-');
+          if (parseInt(parts[0], 10) === year && parseInt(parts[1], 10) === month) {
+            holidaySet.add(parseInt(parts[2], 10));
+          }
+        });
+
+        renderCalendar(year, month, holidaySet, counts);
       });
+    }
 
-      renderCalendar(calYear, calMonth, holidaySet, counts);
+    document.getElementById('calPrevBtn').addEventListener('click', function () {
+      var m = calMonth - 1, y = calYear;
+      if (m < 1) { m = 12; y = y - 1; }
+      loadCalendarMonth(y, m);
     });
+    document.getElementById('calNextBtn').addEventListener('click', function () {
+      var m = calMonth + 1, y = calYear;
+      if (m > 12) { m = 1; y = y + 1; }
+      loadCalendarMonth(y, m);
+    });
+
+    loadCalendarMonth(calYear, calMonth);
+
 
     function renderCalendar(year, month, holidaySet, counts) {
       var grid = document.getElementById('calendarGrid');
