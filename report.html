@@ -340,40 +340,47 @@
         }
       });
 
-      // 그래프 3: 주요 증상 TOP 5 — AI가 분류를 마칠 때까지는 빈 상태로 먼저
-      // 그려두고, 응답이 오면 renderSymptomChart에서 채워 넣습니다.
+      // 그래프 3: 주요 증상 TOP 5
+      // 증상 문장은 매번 표현이 조금씩 다르게 저장되어 있어서(예: "넘어짐, 무릎 찰과상"),
+      // 문장 전체가 아니라 단어 단위로 쪼갠 뒤, 자주 등장하는 단어를 세는 방식으로
+      // "자주 나오는 증상"을 뽑아냅니다.
+      var wordCounts = {};
+      var stopWords = ['및', '후', '등', '에서', '으로', '동안', '함', '중'];
+
+      data.items.forEach(function (item) {
+        if (!item.symptom) return;
+        var words = item.symptom.split(/[,\s\/·]+/);
+        words.forEach(function (w) {
+          w = w.trim();
+          if (w.length < 2 || stopWords.indexOf(w) !== -1) return;
+          wordCounts[w] = (wordCounts[w] || 0) + 1;
+        });
+      });
+
+      var wordEntries = Object.keys(wordCounts).map(function (w) {
+        return { word: w, count: wordCounts[w] };
+      });
+      wordEntries.sort(function (a, b) { return b.count - a.count; });
+      var topWords = wordEntries.slice(0, 5);
+
       if (symptomChartInstance) symptomChartInstance.destroy();
       symptomChartInstance = new Chart(document.getElementById('symptomChart'), {
         type: 'bar',
-        data: { labels: [], datasets: [{ label: '건수', data: [], backgroundColor: '#DC2626' }] },
+        data: {
+          labels: topWords.map(function (w) { return w.word; }),
+          datasets: [{
+            label: '언급 횟수',
+            data: topWords.map(function (w) { return w.count; }),
+            backgroundColor: '#DC2626'
+          }]
+        },
         options: {
-          indexAxis: 'y', responsive: true,
+          indexAxis: 'y',
+          responsive: true,
           plugins: { legend: { display: false } },
           scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
       });
-
-      var symptoms = data.items.map(function (item) { return item.symptom || ''; }).filter(function (s) { return s; });
-      fetch(GAS_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ type: 'symptomTop5', symptoms: symptoms })
-      })
-        .then(function (res) { return res.json(); })
-        .then(function (result) {
-          if (result && result.ok && result.top5 && result.top5.length > 0) {
-            symptomChartInstance.data.labels = result.top5.map(function (t) { return t.category; });
-            symptomChartInstance.data.datasets[0].data = result.top5.map(function (t) { return t.count; });
-            symptomChartInstance.update();
-          } else {
-            document.querySelector('#symptomChart').parentElement.querySelector('h2').textContent =
-              '🩹 주요 증상 TOP 5 (분류 실패)';
-          }
-        })
-        .catch(function () {
-          document.querySelector('#symptomChart').parentElement.querySelector('h2').textContent =
-            '🩹 주요 증상 TOP 5 (분류 실패)';
-        });
     }
 
     // 개조식 텍스트 요약 (주간·월별 공통으로 씁니다)
