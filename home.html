@@ -90,7 +90,9 @@
   .nursing-caretext { font-size: 12px; color: #666; }
   .nursing-badge { font-size: 13px; }
   .nursing-time { margin-left: auto; font-size: 12px; color: #999; font-weight: 600; }
-  .nursing-report { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #333; }
+  .nursing-report { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; font-size: 14px; }
+  .nursing-report-text, .nursing-rawtext { line-height: 1.6; white-space: pre-wrap; color: #333; }
+  .nursing-rawtext { background: #FAF9F5; border-radius: 8px; padding: 10px; color: #555; }
   #nursingEmpty { font-size: 13px; color: #999; margin-top: 12px; text-align: center; }
 
   #qrBox { display: none; text-align: center; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
@@ -369,40 +371,6 @@
     if (window.location.hash === '#meds') {
       showTab('meds');
     }
-
-    // ── 보건일지 목록 불러오기 ──────────────────────────────
-    var nursingListMinHeight = 0; // 10개(꽉 찬 페이지) 기준 높이를 여기 기억해둡니다.
-
-    function renderNursingList(items) {
-      var listEl = document.getElementById('nursingList');
-      var emptyEl = document.getElementById('nursingEmpty');
-      listEl.innerHTML = '';
-
-      if (!items || items.length === 0) {
-        emptyEl.textContent = '등록된 보건일지가 없습니다.';
-        listEl.style.minHeight = nursingListMinHeight + 'px'; // 게시물이 없어도 자리는 유지
-        return;
-      }
-      emptyEl.style.display = 'none';
-
-      var badgeMap = { 'AI': '✨', '수동': '⚠️', '수정됨': '✏️' };
-
-      // 이름 마지막 글자에 받침이 있는지 보고 "을/를"을 자연스럽게 골라줍니다.
-      // 한글 음절(가~힣)의 유니코드 값을 28로 나눈 나머지가 0이면 받침이 없는 글자입니다.
-      function getEulReulJosa(name) {
-        var lastChar = name.charAt(name.length - 1);
-        var code = lastChar.charCodeAt(0);
-        if (code < 0xAC00 || code > 0xD7A3) return '을'; // 한글 음절이 아니면 기본값
-        return (code - 0xAC00) % 28 === 0 ? '를' : '을';
-      }
-
-      items.forEach(function (item) {
-        var row = document.createElement('div');
-        row.className = 'nursing-item';
-
-        var badge = badgeMap[item.aiUsed] || '';
-        var josa = getEulReulJosa(item.childName);
-
         row.innerHTML =
           '<div class="nursing-top">' +
           '<span class="nursing-child">' + item.childName + '</span>' +
@@ -410,29 +378,15 @@
           '<span class="nursing-badge">' + badge + '</span>' +
           '<span class="nursing-time">' + item.visitDateTime + '</span>' +
           '</div>' +
-          '<div class="nursing-report"></div>';
+          '<div class="nursing-report">' +
+          '<div style="font-weight:700; margin-bottom:4px;">정리된 보고서</div>' +
+          '<div class="nursing-report-text"></div>' +
+          '<div style="font-weight:700; margin:10px 0 4px; color:#888;">원문(작성자 입력, AI 정리의 근거)</div>' +
+          '<div class="nursing-rawtext"></div>' +
+          '</div>';
 
-        row.querySelector('.nursing-report').textContent = item.report;
-
-        row.addEventListener('click', function () {
-          var reportEl = row.querySelector('.nursing-report');
-          reportEl.style.display = reportEl.style.display === 'block' ? 'none' : 'block';
-        });
-
-        listEl.appendChild(row);
-      });
-
-      // 지금이 "꽉 찬 페이지"(10개)라면, 그 실제 높이를 기준값으로 기억해둡니다.
-      // 나중에 마지막 페이지처럼 개수가 적게 나와도, 이 높이를 그대로
-      // min-height로 적용해서 목록 칸(그리고 옆에서 높이를 맞추는 달력)이
-      // 페이지마다 줄었다 늘었다 하지 않게 합니다.
-      if (items.length >= nursingPageSize) {
-        nursingListMinHeight = listEl.scrollHeight;
-      }
-      if (nursingListMinHeight > 0) {
-        listEl.style.minHeight = nursingListMinHeight + 'px';
-      }
-    }
+        row.querySelector('.nursing-report-text').textContent = item.report;
+        row.querySelector('.nursing-rawtext').textContent = item.rawText || '(원문 없음)';
 
     var nursingCurrentPage = 1;
     var nursingPageSize = 8;
