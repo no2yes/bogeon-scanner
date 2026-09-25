@@ -258,10 +258,19 @@
     <div class="feedback-box">
       <h3>바꾸고 싶은 점을 알려주세요</h3>
       <textarea id="feedbackText" placeholder="예: 약품명 칸이 너무 작아요, 이 버튼 위치를 바꿔주세요 등"></textarea>
-      <label class="feedback-checkbox">
+      <label class="feedback-checkbox" id="desktopCaptureRow">
         <input type="checkbox" id="includeScreenshot" checked>
         지금 보고 있는 화면 캡처를 같이 보내기
       </label>
+
+      <!-- 모바일은 진짜 화면공유(getDisplayMedia)를 못 쓰는 경우가 많아서,
+           대신 폰 자체 스크린샷 기능으로 미리 찍어둔 사진을 갤러리에서
+           골라 첨부하는 방식을 씁니다. -->
+      <div class="feedback-checkbox" id="mobileCaptureRow" style="display:none;">
+        <button type="button" id="attachScreenshotBtn" style="padding:6px 10px;border-radius:6px;border:1px solid #ccc;background:#fff;font-size:12px;cursor:pointer;-webkit-appearance:none;appearance:none;">📎 스크린샷 첨부</button>
+        <span id="attachedFileName" style="margin-left:8px;color:#666;"></span>
+        <input type="file" id="screenshotFileInput" accept="image/*" style="display:none;">
+      </div>
       <div id="feedbackStatus"></div>
       <div class="feedback-actions">
         <button type="button" id="feedbackCancel">취소</button>
@@ -302,12 +311,6 @@
     }
     tabBtnNursing.addEventListener('click', function () { showTab('nursing'); });
     tabBtnMeds.addEventListener('click', function () { showTab('meds'); });
-
-    // 주소 끝에 "#meds"가 붙어서 들어오면(예: 스캐너 화면의 "홈으로" 링크),
-    // 기본값인 보건일지 탭 대신 약품관리 탭이 바로 열리게 합니다.
-    if (window.location.hash === '#meds') {
-      showTab('meds');
-    }
 
     // ── 보건일지 목록 불러오기 ──────────────────────────────
     var nursingListMinHeight = 0; // 10개(꽉 찬 페이지) 기준 높이를 여기 기억해둡니다.
@@ -545,178 +548,89 @@
         document.getElementById('empty').textContent = '데이터를 불러오지 못했습니다.';
       });
 
-    function reloadMedList() {
-      fetch(GAS_URL + '?action=medList')
-        .then(function (res) { return res.json(); })
-        .then(function (list) { renderMedList(list); });
-
-      // 폐기로 수량이 바뀌었으니, 상단 통계 카드(전체 등록 약품 / 유통기한 임박)도 같이 새로고침합니다.
-      fetch(GAS_URL + '?action=stats')
-        .then(function (res) { return res.json(); })
-        .then(function (stats) {
-          document.getElementById('totalCount').textContent = stats.total;
-          document.getElementById('expiringCount').textContent = stats.expiringSoon;
-        })
-        .catch(function () {});
-    }
-
-    function renderMedList(groups) {
+    function renderMedList(list) {
       var emptyEl = document.getElementById('empty');
       var tbody = document.getElementById('tbody');
       tbody.innerHTML = '';
 
-      if (!groups || groups.length === 0) {
+      if (!list || list.length === 0) {
         emptyEl.textContent = '보유 중인 약품이 없습니다.';
         document.getElementById('table').style.display = 'none';
         return;
       }
       emptyEl.style.display = 'none';
 
-      groups.forEach(function (group, groupIdx) {
-        var isExpired = group.dday !== null && group.dday < 0;
-        var isSoon = group.dday !== null && group.dday >= 0 && group.dday <= 30;
+      list.forEach(function (item) {
+        var tr = document.createElement('tr');
+        var isExpired = item.dday !== null && item.dday < 0;
+        var isSoon = item.dday !== null && item.dday >= 0 && item.dday <= 30;
+
+        // 유통기한이 지났거나(빨강) 임박하면(주황) 줄 배경색으로 눈에 띄게 합니다.
+        if (isExpired) tr.className = 'med-row-expired';
+        else if (isSoon) tr.className = 'med-row-soon';
 
         var ddayHtml = '–';
-        if (group.dday !== null) {
-          var ddayText = isExpired ? '지남' : ('D-' + group.dday);
+        if (item.dday !== null) {
+          var ddayText = isExpired ? '지남' : ('D-' + item.dday);
           var badgeClass = isExpired ? 'dday-badge expired' : 'dday-badge';
           ddayHtml = '<span class="' + badgeClass + '">' + ddayText + '</span>';
         }
-        var rowClass = isExpired ? 'med-row-expired' : (isSoon ? 'med-row-soon' : '');
 
-        // 그룹 줄(클릭하면 펼쳐집니다)
-        var groupTr = document.createElement('tr');
-        groupTr.className = rowClass + ' med-group-row';
-        groupTr.style.cursor = 'pointer';
-        groupTr.innerHTML =
-          '<td><span class="group-arrow">▶</span> ' + group.name + '</td>' +
-          '<td>' + group.totalQty + '</td>' +
-          '<td>' + (group.expiry || '–') + '</td>' +
+        tr.innerHTML =
+          '<td>' + item.name + '</td>' +
+          '<td>' + item.qty + '</td>' +
+          '<td>' + (item.expiry || '–') + '</td>' +
           '<td>' + ddayHtml + '</td>' +
-          '<td></td>';
+          '<td><button type="button" class="dispose-btn" data-row="' + item.rowIndex + '" data-name="' + item.name + '" data-qty="' + item.qty + '">폐기</button></td>';
 
-        // 펼침 줄(개별 등록 건 + 체크박스 + 개별/선택 폐기)
-        var detailTr = document.createElement('tr');
-        detailTr.className = 'med-detail-row';
-        detailTr.style.display = 'none';
-        var detailTd = document.createElement('td');
-        detailTd.colSpan = 5;
-        detailTd.style.padding = '0';
-        detailTr.appendChild(detailTd);
+        tbody.appendChild(tr);
+      });
 
-        var detailBox = document.createElement('div');
-        detailBox.style.cssText = 'background:#FAF9F5; padding:10px 14px; border-top:1px dashed #ddd; border-bottom:1px dashed #ddd;';
+      document.getElementById('table').style.display = 'table';
 
-        // 개별 등록 건이 몇 개로 나뉘어 있든, "이 유통기한의 이 약품을 몇 개
-        // 삭제할지" 숫자 하나만 입력받습니다. 실제로 어느 등록 건에서 몇 개씩
-        // 뺄지는 삭제 버튼을 누를 때 내부적으로 계산합니다(먼저 등록된 건부터
-        // 순서대로 소진).
-        var qtyRow = document.createElement('div');
-        qtyRow.style.cssText = 'display:flex; align-items:center; gap:8px; margin-top:4px;';
-        qtyRow.innerHTML =
-          '<span style="font-size:13px; color:#555;">삭제할 수량:</span>' +
-          '<button type="button" class="qty-step-btn" data-dir="-1" style="width:28px; height:28px; border-radius:6px; border:1px solid #ccc; background:#fff; cursor:pointer;">–</button>' +
-          '<input type="number" class="dispose-qty-input" min="0" max="' + group.totalQty + '" value="0" style="width:56px; text-align:center; padding:4px; border:1px solid #ccc; border-radius:6px; font-size:14px;">' +
-          '<button type="button" class="qty-step-btn" data-dir="1" style="width:28px; height:28px; border-radius:6px; border:1px solid #ccc; background:#fff; cursor:pointer;">+</button>' +
-          '<button type="button" class="select-all-btn" style="padding:4px 10px; border-radius:6px; border:1px solid #2F6F5E; background:#fff; color:#2F6F5E; font-size:12px; cursor:pointer;">전체(' + group.totalQty + ')</button>' +
-          '<span style="font-size:12px; color:#999;">/ 총 ' + group.totalQty + '개</span>';
-        detailBox.appendChild(qtyRow);
+      // 폐기 버튼: 수량을 물어보고, 그만큼만 차감합니다(남은 수량은 계속 관리).
+      tbody.querySelectorAll('.dispose-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var rowIndex = btn.getAttribute('data-row');
+          var name = btn.getAttribute('data-name');
+          var maxQty = parseInt(btn.getAttribute('data-qty'), 10);
 
-        var qtyInput = qtyRow.querySelector('.dispose-qty-input');
+          var input = prompt(name + ' — 폐기할 수량을 입력하세요 (남은 수량: ' + maxQty + ')', maxQty);
+          if (input === null) return; // 취소
 
-        qtyRow.querySelectorAll('.qty-step-btn').forEach(function (stepBtn) {
-          stepBtn.addEventListener('click', function () {
-            var dir = parseInt(stepBtn.getAttribute('data-dir'), 10);
-            var next = (parseInt(qtyInput.value, 10) || 0) + dir;
-            next = Math.max(0, Math.min(group.totalQty, next));
-            qtyInput.value = next;
-            updateBatchBtn();
-          });
-        });
-        qtyRow.querySelector('.select-all-btn').addEventListener('click', function () {
-          qtyInput.value = group.totalQty;
-          updateBatchBtn();
-        });
-        qtyInput.addEventListener('input', function () {
-          var v = Math.max(0, Math.min(group.totalQty, parseInt(qtyInput.value, 10) || 0));
-          qtyInput.value = v;
-          updateBatchBtn();
-        });
-
-        var batchRow = document.createElement('div');
-        batchRow.style.cssText = 'margin-top:10px; padding-top:8px; border-top:1px solid #eee; text-align:right;';
-        var batchBtn = document.createElement('button');
-        batchBtn.type = 'button';
-        batchBtn.textContent = '선택 삭제';
-        batchBtn.className = 'dispose-btn';
-        batchBtn.style.display = 'none';
-        batchRow.appendChild(batchBtn);
-        detailBox.appendChild(batchRow);
-
-        function updateBatchBtn() {
-          var qty = parseInt(qtyInput.value, 10) || 0;
-          batchBtn.style.display = qty > 0 ? 'inline-block' : 'none';
-          batchBtn.textContent = '선택 삭제 (' + qty + '개)';
-        }
-
-        detailTd.appendChild(detailBox);
-
-
-
-        batchBtn.addEventListener('click', function () {
-          var totalToRemove = parseInt(qtyInput.value, 10) || 0;
-          if (totalToRemove === 0) return;
-          if (!confirm(group.name + ' ' + totalToRemove + '개를 삭제할까요?')) return;
-
-          // 입력한 수량을, 먼저 등록된 건부터 순서대로 소진하면서
-          // "어느 등록 건(rowIndex)에서 몇 개씩 뺄지"를 계산합니다.
-          var remaining = totalToRemove;
-          var payloadItems = [];
-          for (var gi = 0; gi < group.items.length && remaining > 0; gi++) {
-            var take = Math.min(remaining, group.items[gi].qty);
-            if (take > 0) {
-              payloadItems.push({ rowIndex: group.items[gi].rowIndex, disposeQty: take });
-              remaining -= take;
-            }
+          var disposeQty = parseInt(input, 10);
+          if (!disposeQty || disposeQty <= 0 || disposeQty > maxQty) {
+            alert('올바른 수량을 입력해 주세요 (1 ~ ' + maxQty + ').');
+            return;
           }
 
-          batchBtn.disabled = true;
-          batchBtn.textContent = '처리 중...';
+          btn.disabled = true;
+          btn.textContent = '처리 중...';
 
           fetch(GAS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ type: 'disposeMedBatch', items: payloadItems })
+            body: JSON.stringify({ type: 'disposeMed', rowIndex: rowIndex, disposeQty: disposeQty })
           })
             .then(function (res) { return res.json(); })
             .then(function (data) {
               if (data && data.ok) {
-                reloadMedList();
+                fetch(GAS_URL + '?action=medList')
+                  .then(function (res) { return res.json(); })
+                  .then(function (list) { renderMedList(list); });
               } else {
-                batchBtn.disabled = false;
-                batchBtn.textContent = '선택한 항목 전량 폐기';
+                btn.disabled = false;
+                btn.textContent = '폐기';
                 alert('폐기 실패: ' + (data && data.error ? data.error : '알 수 없는 오류'));
               }
             })
             .catch(function () {
-              batchBtn.disabled = false;
-              batchBtn.textContent = '선택한 항목 전량 폐기';
+              btn.disabled = false;
+              btn.textContent = '폐기';
               alert('처리 중 오류가 발생했습니다.');
             });
         });
-
-        // 그룹 줄을 클릭하면 펼침/접힘 토글
-        groupTr.addEventListener('click', function () {
-          var isOpen = detailTr.style.display === 'table-row';
-          detailTr.style.display = isOpen ? 'none' : 'table-row';
-          groupTr.querySelector('.group-arrow').textContent = isOpen ? '▶' : '▼';
-        });
-
-        tbody.appendChild(groupTr);
-        tbody.appendChild(detailTr);
       });
-
-      document.getElementById('table').style.display = 'table';
     }
 
     // 통계 카드·목록·보건일지 목록을 모두 불러오면(또는 실패해도) 첫 로딩 화면을 걷습니다.
@@ -773,6 +687,44 @@
     var feedbackText = document.getElementById('feedbackText');
     var feedbackStatus = document.getElementById('feedbackStatus');
     var includeScreenshot = document.getElementById('includeScreenshot');
+
+    // 모바일에서 첨부한 스크린샷 파일을 담아둘 변수입니다.
+    var attachScreenshotBtn = document.getElementById('attachScreenshotBtn');
+    var screenshotFileInput = document.getElementById('screenshotFileInput');
+    var attachedFileName = document.getElementById('attachedFileName');
+
+    if (isMobileDevice) {
+      document.getElementById('desktopCaptureRow').style.display = 'none';
+      document.getElementById('mobileCaptureRow').style.display = 'block';
+    }
+
+    attachScreenshotBtn.addEventListener('click', function () {
+      screenshotFileInput.click();
+    });
+
+    screenshotFileInput.addEventListener('change', function () {
+      var file = screenshotFileInput.files[0];
+      if (!file) return;
+      attachedFileName.textContent = '불러오는 중...';
+
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          // 원본 사진이 너무 크면 전송이 느려지므로, 가로 700px로 줄여서 저장합니다.
+          var maxWidth = 700;
+          var scaleRatio = Math.min(1, maxWidth / img.width);
+          var canvas = document.createElement('canvas');
+          canvas.width = img.width * scaleRatio;
+          canvas.height = img.height * scaleRatio;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          attachedScreenshotDataUrl = canvas.toDataURL('image/jpeg', 0.45);
+          attachedFileName.textContent = '첨부됨 ✓';
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
 
     feedbackFab.addEventListener('click', function () {
       includeScreenshot.checked = true;
