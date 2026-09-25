@@ -126,6 +126,12 @@
     flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px;
     cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none;
   }
+    @media print {
+    body > *:not(#detailReportModal) { display: none !important; }
+    #detailReportModal { position: static; background: none; padding: 0; }
+    #detailReportModal .detail-box { max-height: none; box-shadow: none; }
+    .detail-modal-actions { display: none !important; }
+  }
   #qrBox { display: none; text-align: center; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
 
   #homeQrBox { display: none; margin-top: 20px; }
@@ -1130,6 +1136,10 @@
 
     document.getElementById('detailCloseBtn').addEventListener('click', function () {
       document.getElementById('detailReportModal').style.display = 'none';
+    });
+
+    document.getElementById('detailPrintBtn').addEventListener('click', function () {
+      window.print();
     });
 
     document.getElementById('detailCopyBtn').addEventListener('click', function () {
