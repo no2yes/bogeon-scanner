@@ -169,8 +169,13 @@
           <h2 style="margin:0;">최근 보건일지</h2>
           <a class="write-log-btn" href="nursing-log.html">📝 새 일지 작성</a>
         </div>
-        <div id="nursingList"></div>
-        <div id="nursingEmpty">불러오는 중...</div>
+        <div id="nursingListWrapper" style="position: relative;">
+          <div id="nursingListLoadingOverlay" class="calendar-loading-overlay">
+            <div class="small-spinner"></div>
+          </div>
+          <div id="nursingList"></div>
+          <div id="nursingEmpty">불러오는 중...</div>
+        </div>
 
         <div id="nursingPagination" style="display:none; align-items:center; justify-content:center; gap:12px; margin-top:8px;">
           <button type="button" id="nursingPrevBtn" style="padding:4px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:12px; cursor:pointer; -webkit-appearance:none; appearance:none;">‹ 이전</button>
@@ -347,14 +352,21 @@
     var nursingPageSize = 10;
 
     function loadNursingPage(page) {
+      var nursingLoadingEl = document.getElementById('nursingListLoadingOverlay');
+      nursingLoadingEl.style.display = 'flex';
+      document.getElementById('nursingPrevBtn').disabled = true;
+      document.getElementById('nursingNextBtn').disabled = true;
+
       return fetch(GAS_URL + '?action=nursingLogList&page=' + page)
         .then(function (res) { return res.json(); })
         .then(function (data) {
           nursingCurrentPage = page;
           renderNursingList(data.items);
           renderNursingPagination(data.totalCount, page);
+          nursingLoadingEl.style.display = 'none';
         })
         .catch(function () {
+          nursingLoadingEl.style.display = 'none';
           document.getElementById('nursingEmpty').textContent = '불러오지 못했습니다.';
         });
     }
