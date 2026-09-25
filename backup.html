@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>백업 / 복원</title>
+<style>
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: #F7F5EF; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; margin: 0; padding: 20px; background: #F7F5EF; color: #1F2A24; max-width: 640px; margin-left: auto; margin-right: auto; box-sizing: border-box; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  h2 { font-size: 14px; margin: 0 0 10px; }
+
+  a.back-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; margin-bottom: 14px; border-radius: 999px; border: 1px solid #2F6F5E; background: #fff; font-size: 14px; font-weight: 600; color: #2F6F5E; text-decoration: none; }
+
+  .field-box { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+
+  .guide-box {
+    background: #EAF2EE; border-radius: 10px; padding: 12px 14px;
+    font-size: 13px; color: #2F6F5E; line-height: 1.5; margin-bottom: 14px;
+  }
+
+  #backupNowBtn {
+    display: block; width: 100%; box-sizing: border-box; padding: 14px;
+    border-radius: 10px; border: none; background: #2F6F5E; color: #fff;
+    font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit;
+    -webkit-appearance: none; appearance: none;
+  }
+
+  .backup-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 8px;
+  }
+  .backup-item .backup-info { flex: 1; min-width: 0; }
+  .backup-item .backup-name { font-size: 14px; font-weight: 600; }
+  .backup-item .backup-time { font-size: 12px; color: #888; margin-top: 2px; }
+  .restore-btn {
+    flex-shrink: 0; padding: 8px 14px; border-radius: 8px; border: 1px solid #DC2626;
+    background: #fff; color: #DC2626; font-size: 13px; font-weight: 600; cursor: pointer;
+    font-family: inherit; -webkit-appearance: none; appearance: none; white-space: nowrap;
+  }
+  #emptyList { font-size: 13px; color: #999; text-align: center; padding: 20px 0; }
+
+  .big-spinner {
+    width: 68px; height: 68px; border: 6px solid rgba(47, 111, 94, 0.12);
+    border-top-color: #2F6F5E; border-radius: 50%; animation: bigspin 0.9s linear infinite;
+  }
+  @keyframes bigspin { to { transform: rotate(360deg); } }
+  #loadingOverlay {
+    position: fixed; inset: 0; background: rgba(247, 245, 239, 0.97);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 700;
+  }
+  #loadingOverlay .loading-text { margin-top: 20px; font-size: 18px; font-weight: 700; color: #1F2A24; }
+</style>
+</head>
+<body>
+  <a class="back-link" href="home.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    홈으로
+  </a>
+
+  <h1>백업 / 복원</h1>
+
+  <div class="guide-box">
+    💾 매일 새벽 자동으로 백업되고, 14일이 지난 백업은 자동으로 정리됩니다.<br>
+    복원 방법과 다른 곳에 새로 세팅하는 방법은, 구글 드라이브의 <strong>"보건실관리시스템_백업"</strong> 폴더 안 <strong>복원_매뉴얼.txt</strong>에 항상 최신 내용으로 같이 저장돼요.
+  </div>
+
+  <div class="field-box">
+    <button type="button" id="backupNowBtn">지금 백업하기</button>
+  </div>
+
+  <h2>백업 목록</h2>
+  <div id="backupList"></div>
+  <div id="emptyList">불러오는 중...</div>
+
+  <div id="loadingOverlay">
+    <div class="big-spinner"></div>
+    <div class="loading-text">처리하고 있어요...</div>
+  </div>
+
+  <script>
+    var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
+
+    var loadingOverlay = document.getElementById('loadingOverlay');
+    var loadingText = document.querySelector('#loadingOverlay .loading-text');
+
+    function formatKoreanDateTime(isoStr) {
+      var d = new Date(isoStr);
+      var weekdayNames = ['일', '월', '화', '수', '목', '금', '토'];
+      return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' +
+        String(d.getDate()).padStart(2, '0') + '.(' + weekdayNames[d.getDay()] + ') ' +
+        String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+
+    function loadBackupList() {
+      fetch(GAS_URL + '?action=listBackups')
+        .then(function (res) { return res.json(); })
+        .then(function (list) { renderBackupList(list); })
+        .catch(function () {
+          document.getElementById('emptyList').textContent = '불러오지 못했습니다.';
+        });
+    }
+
+    function renderBackupList(list) {
+      var listEl = document.getElementById('backupList');
+      var emptyEl = document.getElementById('emptyList');
+      listEl.innerHTML = '';
+
+      if (!list || list.length === 0) {
+        emptyEl.textContent = '아직 백업이 없습니다. "지금 백업하기"를 눌러 첫 백업을 만들어 보세요.';
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+
+      list.forEach(function (backup) {
+        var item = document.createElement('div');
+        item.className = 'backup-item';
+        item.innerHTML =
+          '<div class="backup-info">' +
+          '<div class="backup-name">' + backup.name + '</div>' +
+          '<div class="backup-time">' + formatKoreanDateTime(backup.created) + '</div>' +
+          '</div>' +
+          '<button type="button" class="restore-btn">이 시점으로 복원</button>';
+
+        item.querySelector('.restore-btn').addEventListener('click', function () {
+          restoreBackup(backup);
+        });
+
+        listEl.appendChild(item);
+      });
+    }
+
+    function restoreBackup(backup) {
+      var confirmed = confirm(
+        formatKoreanDateTime(backup.created) + ' 시점으로 복원할까요?\n\n' +
+        '⚠️ 지금 운영 중인 데이터(약품목록·보건일지·폐기이력·피드백)가 이 백업 내용으로 ' +
+        '즉시 덮어써지며, 되돌릴 수 없습니다.\n\n' +
+        '걱정되면 취소하고 "지금 백업하기"를 먼저 눌러 현재 상태부터 백업해 두세요.'
+      );
+      if (!confirmed) return;
+
+      // 한 번 더, 문구를 직접 입력하게 해서 실수로 누르는 걸 막습니다.
+      var typed = prompt('정말로 진행하려면 "복원"이라고 입력해 주세요.');
+      if (typed !== '복원') {
+        alert('취소되었습니다.');
+        return;
+      }
+
+      loadingText.textContent = '복원하고 있어요...';
+      loadingOverlay.style.display = 'flex';
+
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ type: 'restoreBackup', backupFileId: backup.id })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          loadingOverlay.style.display = 'none';
+          if (data && data.ok) {
+            alert('복원이 완료됐습니다: ' + data.restoredSheets.join(', '));
+            window.location.href = 'home.html';
+          } else {
+            alert('복원 실패: ' + (data && data.error ? data.error : '알 수 없는 오류'));
+          }
+        })
+        .catch(function () {
+          loadingOverlay.style.display = 'none';
+          alert('처리 중 오류가 발생했습니다.');
+        });
+    }
+
+    document.getElementById('backupNowBtn').addEventListener('click', function () {
+      var btn = document.getElementById('backupNowBtn');
+      btn.disabled = true;
+      loadingText.textContent = '백업하고 있어요...';
+      loadingOverlay.style.display = 'flex';
+
+      fetch(GAS_URL + '?action=runBackupNow')
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          loadingOverlay.style.display = 'none';
+          btn.disabled = false;
+          if (data && data.ok) {
+            loadBackupList();
+          } else {
+            alert('백업 실패: ' + (data && data.error ? data.error : '알 수 없는 오류'));
+          }
+        })
+        .catch(function () {
+          loadingOverlay.style.display = 'none';
+          btn.disabled = false;
+          alert('처리 중 오류가 발생했습니다.');
+        });
+    });
+
+    loadBackupList();
+  </script>
+</body>
+</html>
