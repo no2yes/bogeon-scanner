@@ -227,12 +227,12 @@
           loadingOverlay.style.display = 'none';
 
           if (data && data.ok) {
-            outputBtn.textContent = '저장됨 ✓';
-            // 최종 저장이 끝났으니, 잠깐 확인 문구를 보여준 뒤 홈 화면
-            // (보건일지 탭)으로 돌아갑니다.
-            setTimeout(function () {
-              window.location.href = 'home.html';
-            }, 800);
+            // "저장됨" 문구를 따로 보여주고 잠깐 멈췄다가 이동하면, 홈 화면의
+            // 자체 로딩과 겹쳐서 로딩이 두 번 도는 것처럼 느껴집니다. 그래서
+            // 확인 문구 없이 로딩 화면을 띄운 채로 바로 이동합니다 — 그러면
+            // 이 화면의 스피너가 홈 화면 스피너로 자연스럽게 이어집니다.
+            window.location.href = 'home.html';
+            return;
           } else {
             outputBtn.disabled = false;
             alert('저장 실패: ' + (data && data.error ? data.error : '알 수 없는 오류'));
