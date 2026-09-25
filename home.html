@@ -543,6 +543,15 @@
       fetch(GAS_URL + '?action=medList')
         .then(function (res) { return res.json(); })
         .then(function (list) { renderMedList(list); });
+
+      // 폐기로 수량이 바뀌었으니, 상단 통계 카드(전체 등록 약품 / 유통기한 임박)도 같이 새로고침합니다.
+      fetch(GAS_URL + '?action=stats')
+        .then(function (res) { return res.json(); })
+        .then(function (stats) {
+          document.getElementById('totalCount').textContent = stats.total;
+          document.getElementById('expiringCount').textContent = stats.expiringSoon;
+        })
+        .catch(function () {});
     }
 
     function renderMedList(groups) {
