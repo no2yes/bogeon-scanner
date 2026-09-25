@@ -4,10 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>보건일지 보고서</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; margin: 0; padding: 20px; background: #F7F5EF; color: #1F2A24; }
   h1 { font-size: 18px; margin: 0 0 4px; }
+  h2 { font-size: 14px; margin: 0 0 10px; }
 
   a.back-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; margin-bottom: 14px; border-radius: 999px; border: 1px solid #2F6F5E; background: #fff; font-size: 14px; font-weight: 600; color: #2F6F5E; text-decoration: none; }
 
@@ -18,7 +20,6 @@
     padding: 10px 12px; font-family: inherit; font-size: 15px; color: #1F2A24;
   }
 
-  /* 주간/월별 전환 탭 */
   #reportTypeTabs { display: flex; gap: 8px; margin-bottom: 14px; }
   .type-tab-btn {
     flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #ccc; background: #fff;
@@ -34,19 +35,32 @@
     -webkit-appearance: none; appearance: none; margin-top: 4px;
   }
 
-  #resultBox { display: none; }
+  /* ── 주간 보고서(텍스트만) ── */
+  #weeklyResultBox { display: none; }
   #resultText {
     width: 100%; box-sizing: border-box; min-height: 260px;
     background: #FAF9F5; border: 1px solid #eee; border-radius: 10px;
     padding: 14px; font-size: 15px; line-height: 1.7; white-space: pre-wrap;
     font-family: inherit; color: #1F2A24; resize: vertical;
   }
-  #copyBtn {
+  .copy-btn {
     display: block; width: 100%; box-sizing: border-box; padding: 12px; margin-top: 10px;
     border-radius: 10px; border: 1px solid #2F6F5E; background: #fff; color: #2F6F5E;
     font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
     -webkit-appearance: none; appearance: none;
   }
+
+  /* ── 월별 보고서(그래프 대시보드) ── */
+  #monthlyResultBox { display: none; }
+  .month-stat-cards { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .month-stat-card { flex: 1; min-width: 100px; box-sizing: border-box; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 14px; text-align: center; }
+  .month-stat-card .num { font-size: 24px; font-weight: 800; color: #2F6F5E; }
+  .month-stat-card .label { font-size: 12px; color: #888; margin-top: 4px; }
+
+  .chart-box { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .chart-box canvas { max-height: 260px; }
+
+  .text-summary-box { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; }
 
   .big-spinner {
     width: 68px; height: 68px; border: 6px solid rgba(47, 111, 94, 0.12);
@@ -87,10 +101,36 @@
     <button type="button" id="generateBtn" style="margin-top: 14px;">보고서 생성</button>
   </div>
 
-  <div class="field-box" id="resultBox">
-    <label id="resultLabel">보고서</label>
+  <!-- ── 주간 보고서 결과: 텍스트만 ── -->
+  <div class="field-box" id="weeklyResultBox">
+    <label>주간 보고서</label>
     <textarea id="resultText"></textarea>
-    <button type="button" id="copyBtn">📋 아래 내용 전체 복사</button>
+    <button type="button" id="copyWeeklyBtn" class="copy-btn">📋 아래 내용 전체 복사</button>
+  </div>
+
+  <!-- ── 월별 보고서 결과: 그래프 대시보드 + 본문 요약(복사용) ── -->
+  <div id="monthlyResultBox">
+    <div class="month-stat-cards">
+      <div class="month-stat-card"><div class="num" id="statTotal">–</div><div class="label">총 방문 건수</div></div>
+      <div class="month-stat-card"><div class="num" id="statChildren">–</div><div class="label">방문 아동 수</div></div>
+      <div class="month-stat-card"><div class="num" id="statAvg">–</div><div class="label">일평균 방문</div></div>
+    </div>
+
+    <div class="chart-box">
+      <h2>📈 일별 방문 추이</h2>
+      <canvas id="dailyChart"></canvas>
+    </div>
+
+    <div class="chart-box">
+      <h2>🏆 아동별 방문 횟수 TOP 5</h2>
+      <canvas id="childChart"></canvas>
+    </div>
+
+    <div class="text-summary-box">
+      <label>보고서 본문(복사용 텍스트 요약)</label>
+      <textarea id="monthlyResultText" style="width:100%; box-sizing:border-box; min-height:220px; background:#FAF9F5; border:1px solid #eee; border-radius:10px; padding:14px; font-size:15px; line-height:1.7; white-space:pre-wrap; font-family:inherit; color:#1F2A24; resize:vertical;"></textarea>
+      <button type="button" id="copyMonthlyBtn" class="copy-btn">📋 보고서 본문 복사</button>
+    </div>
   </div>
 
   <div id="loadingOverlay">
@@ -101,7 +141,9 @@
   <script>
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
 
-    var reportType = 'weekly'; // 'weekly' 또는 'monthly'
+    var reportType = 'weekly';
+    var dailyChartInstance = null;
+    var childChartInstance = null;
 
     var tabWeekly = document.getElementById('tabWeekly');
     var tabMonthly = document.getElementById('tabMonthly');
@@ -111,7 +153,6 @@
     function pad2(n) { return String(n).padStart(2, '0'); }
     function formatDateStr(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
 
-    // 오늘 날짜/이번 달을 입력칸 기본값으로 채워둡니다.
     var today = new Date();
     document.getElementById('weekDate').value = formatDateStr(today);
     document.getElementById('monthPicker').value = today.getFullYear() + '-' + pad2(today.getMonth() + 1);
@@ -122,6 +163,7 @@
       tabMonthly.classList.remove('active');
       weeklyField.style.display = 'block';
       monthlyField.style.display = 'none';
+      document.getElementById('monthlyResultBox').style.display = 'none';
     });
     tabMonthly.addEventListener('click', function () {
       reportType = 'monthly';
@@ -129,12 +171,12 @@
       tabWeekly.classList.remove('active');
       weeklyField.style.display = 'none';
       monthlyField.style.display = 'block';
+      document.getElementById('weeklyResultBox').style.display = 'none';
     });
 
-    // 선택한 날짜가 속한 주(월요일~일요일)의 시작·끝 날짜를 계산합니다.
     function getWeekRange(dateStr) {
       var d = new Date(dateStr + 'T00:00:00');
-      var day = d.getDay(); // 0=일 ... 6=토
+      var day = d.getDay();
       var diffToMonday = (day === 0 ? -6 : 1 - day);
       var monday = new Date(d);
       monday.setDate(d.getDate() + diffToMonday);
@@ -144,14 +186,13 @@
     }
 
     function getMonthRange(monthStr) {
-      // monthStr: "2026-09"
       var parts = monthStr.split('-');
       var year = parseInt(parts[0], 10);
       var month = parseInt(parts[1], 10);
       var startObj = new Date(year, month - 1, 1);
       var lastDay = new Date(year, month, 0).getDate();
       var endObj = new Date(year, month - 1, lastDay);
-      return { start: formatDateStr(startObj), end: formatDateStr(endObj), startObj: startObj, endObj: endObj };
+      return { start: formatDateStr(startObj), end: formatDateStr(endObj), startObj: startObj, endObj: endObj, year: year, month: month, lastDay: lastDay };
     }
 
     var weekdayNames = ['일', '월', '화', '수', '목', '금', '토'];
@@ -160,51 +201,132 @@
     }
 
     document.getElementById('generateBtn').addEventListener('click', function () {
-      var range;
-      var periodLabel;
-
-      if (reportType === 'weekly') {
-        var weekDateVal = document.getElementById('weekDate').value;
-        if (!weekDateVal) { alert('날짜를 선택해 주세요.'); return; }
-        range = getWeekRange(weekDateVal);
-        periodLabel = formatKoreanDate(range.startObj) + ' ~ ' + formatKoreanDate(range.endObj);
-      } else {
-        var monthVal = document.getElementById('monthPicker').value;
-        if (!monthVal) { alert('월을 선택해 주세요.'); return; }
-        range = getMonthRange(monthVal);
-        periodLabel = range.startObj.getFullYear() + '년 ' + (range.startObj.getMonth() + 1) + '월';
-      }
-
       document.getElementById('loadingOverlay').style.display = 'flex';
       document.getElementById('generateBtn').disabled = true;
+
+      if (reportType === 'weekly') {
+        generateWeeklyReport();
+      } else {
+        generateMonthlyReport();
+      }
+    });
+
+    function generateWeeklyReport() {
+      var weekDateVal = document.getElementById('weekDate').value;
+      if (!weekDateVal) { alert('날짜를 선택해 주세요.'); finishLoading(); return; }
+      var range = getWeekRange(weekDateVal);
+      var periodLabel = formatKoreanDate(range.startObj) + ' ~ ' + formatKoreanDate(range.endObj);
 
       fetch(GAS_URL + '?action=periodReport&start=' + range.start + '&end=' + range.end)
         .then(function (res) { return res.json(); })
         .then(function (data) {
-          document.getElementById('loadingOverlay').style.display = 'none';
-          document.getElementById('generateBtn').disabled = false;
-
-          var reportText = buildReportText(periodLabel, data);
-          document.getElementById('resultLabel').textContent =
-            (reportType === 'weekly' ? '주간 보고서' : '월별 보고서');
+          finishLoading();
+          var reportText = buildTextSummary(periodLabel, data);
           document.getElementById('resultText').value = reportText;
-          document.getElementById('resultBox').style.display = 'block';
-          document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth' });
+          document.getElementById('weeklyResultBox').style.display = 'block';
+          document.getElementById('weeklyResultBox').scrollIntoView({ behavior: 'smooth' });
         })
         .catch(function () {
-          document.getElementById('loadingOverlay').style.display = 'none';
-          document.getElementById('generateBtn').disabled = false;
+          finishLoading();
           alert('불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
         });
-    });
+    }
 
-    // 서버에서 받은 데이터(건수, 방문 목록, 아동별 건수)를 개조식 보고서 텍스트로 조립합니다.
-    function buildReportText(periodLabel, data) {
+    function generateMonthlyReport() {
+      var monthVal = document.getElementById('monthPicker').value;
+      if (!monthVal) { alert('월을 선택해 주세요.'); finishLoading(); return; }
+      var range = getMonthRange(monthVal);
+      var periodLabel = range.year + '년 ' + range.month + '월';
+
+      fetch(GAS_URL + '?action=periodReport&start=' + range.start + '&end=' + range.end)
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          finishLoading();
+          renderMonthlyDashboard(range, data);
+          document.getElementById('monthlyResultText').value = buildTextSummary(periodLabel, data);
+          document.getElementById('monthlyResultBox').style.display = 'block';
+          document.getElementById('monthlyResultBox').scrollIntoView({ behavior: 'smooth' });
+        })
+        .catch(function () {
+          finishLoading();
+          alert('불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        });
+    }
+
+    function finishLoading() {
+      document.getElementById('loadingOverlay').style.display = 'none';
+      document.getElementById('generateBtn').disabled = false;
+    }
+
+    // 서버가 준 방문 목록·아동별 건수로 통계 카드 + 두 개의 그래프를 그립니다.
+    function renderMonthlyDashboard(range, data) {
+      // 일별 방문 건수를 계산합니다 (1일 ~ 그 달 마지막 날까지).
+      var dailyCounts = new Array(range.lastDay).fill(0);
+      data.items.forEach(function (item) {
+        var day = parseInt(item.visitDateTime.substring(8, 10), 10);
+        if (day >= 1 && day <= range.lastDay) dailyCounts[day - 1]++;
+      });
+      var dayLabels = [];
+      for (var d = 1; d <= range.lastDay; d++) dayLabels.push(d + '일');
+
+      // 통계 카드
+      var uniqueChildren = Object.keys(data.childCounts).length;
+      document.getElementById('statTotal').textContent = data.count;
+      document.getElementById('statChildren').textContent = uniqueChildren;
+      document.getElementById('statAvg').textContent = (data.count / range.lastDay).toFixed(1);
+
+      // 그래프 1: 일별 방문 추이 (막대그래프)
+      if (dailyChartInstance) dailyChartInstance.destroy();
+      dailyChartInstance = new Chart(document.getElementById('dailyChart'), {
+        type: 'bar',
+        data: {
+          labels: dayLabels,
+          datasets: [{
+            label: '방문 건수',
+            data: dailyCounts,
+            backgroundColor: '#2F6F5E'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+      });
+
+      // 그래프 2: 아동별 방문 횟수 TOP 5 (가로 막대그래프)
+      var childEntries = Object.keys(data.childCounts).map(function (name) {
+        return { name: name, count: data.childCounts[name] };
+      });
+      childEntries.sort(function (a, b) { return b.count - a.count; });
+      var top5 = childEntries.slice(0, 5);
+
+      if (childChartInstance) childChartInstance.destroy();
+      childChartInstance = new Chart(document.getElementById('childChart'), {
+        type: 'bar',
+        data: {
+          labels: top5.map(function (c) { return c.name; }),
+          datasets: [{
+            label: '방문 횟수',
+            data: top5.map(function (c) { return c.count; }),
+            backgroundColor: '#B7791F'
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+      });
+    }
+
+    // 개조식 텍스트 요약 (주간·월별 공통으로 씁니다)
+    function buildTextSummary(periodLabel, data) {
       var lines = [];
       lines.push('○ 보고기간: ' + periodLabel);
       lines.push('○ 총 방문 건수: ' + data.count + '건');
 
-      // 아동별 건수를 많은 순서대로 정렬합니다.
       var childEntries = Object.keys(data.childCounts).map(function (name) {
         return { name: name, count: data.childCounts[name] };
       });
@@ -224,7 +346,6 @@
         lines.push('  - 없음');
       } else {
         data.items.forEach(function (item) {
-          // "2026.09.25.(금) 10:10" → "09.25(금) 10:10" 형태로 조금 더 짧게 다듬습니다.
           var shortTime = item.visitDateTime.replace(/^\d{4}\./, '');
           lines.push('  ' + shortTime + ' - ' + item.childName + ' - ' + (item.symptom || '(내용 없음)'));
         });
@@ -233,15 +354,19 @@
       return lines.join('\n');
     }
 
-    document.getElementById('copyBtn').addEventListener('click', function () {
-      var resultText = document.getElementById('resultText');
-      navigator.clipboard.writeText(resultText.value).then(function () {
-        var btn = document.getElementById('copyBtn');
-        var original = btn.textContent;
-        btn.textContent = '복사됨!';
-        setTimeout(function () { btn.textContent = original; }, 1200);
+    function setupCopyButton(btnId, textareaId) {
+      document.getElementById(btnId).addEventListener('click', function () {
+        var textEl = document.getElementById(textareaId);
+        navigator.clipboard.writeText(textEl.value).then(function () {
+          var btn = document.getElementById(btnId);
+          var original = btn.textContent;
+          btn.textContent = '복사됨!';
+          setTimeout(function () { btn.textContent = original; }, 1200);
+        });
       });
-    });
+    }
+    setupCopyButton('copyWeeklyBtn', 'resultText');
+    setupCopyButton('copyMonthlyBtn', 'monthlyResultText');
   </script>
 </body>
 </html>
