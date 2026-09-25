@@ -398,16 +398,8 @@
       var childEntries = Object.keys(data.childCounts).map(function (name) {
         return { name: name, count: data.childCounts[name] };
       });
-      childEntries.sort(function (a, b) { return b.count - a.count; });
 
-      lines.push('○ 아동별 방문 현황:');
-      if (childEntries.length === 0) {
-        lines.push('  - 해당 기간 방문 기록이 없습니다.');
-      } else {
-        childEntries.forEach(function (c) {
-          lines.push('  - ' + c.name + ' ' + c.count + '회');
-        });
-      }
+      lines.push('○ 총 이용 아동 수: ' + childEntries.length + '명');
 
       lines.push('○ 세부 내역:');
       if (data.items.length === 0) {
