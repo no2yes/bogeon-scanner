@@ -6,11 +6,11 @@
 <title>보건실 관리시스템</title>
 
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; margin: 0; padding: 20px; background: #F7F5EF; color: #1F2A24; }
-  h1 { font-size: 18px; margin: 0 0 16px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; margin: 0; padding: 12px 16px; background: #F7F5EF; color: #1F2A24; }
+  h1 { font-size: 16px; margin: 0 0 10px; }
 
   /* 탭 바 */
-  #tabBar { display: flex; gap: 8px; margin-bottom: 16px; }
+  #tabBar { display: flex; gap: 8px; margin-bottom: 10px; }
   .tab-btn {
     flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #ccc; background: #fff;
     color: #666; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
@@ -31,16 +31,16 @@
     border: none; cursor: pointer; -webkit-appearance: none; appearance: none;
   }
 
-  h2 { font-size: 15px; margin: 0 0 10px; }
+  h2 { font-size: 14px; margin: 0 0 8px; }
 
   /* "최근 보건일지" 제목과 "새 일지 작성" 버튼을 한 줄 양 끝에 배치합니다 */
-  .nursing-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 10px; }
+  .nursing-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 10px; }
   .write-log-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 16px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 12px; border-radius: 999px;
     background: linear-gradient(135deg, #2F6F5E, #3B8B72);
-    color: #fff; font-size: 13px; font-weight: 700; text-decoration: none;
-    box-shadow: 0 3px 8px rgba(47,111,94,0.3); white-space: nowrap;
+    color: #fff; font-size: 12px; font-weight: 700; text-decoration: none;
+    box-shadow: 0 2px 6px rgba(47,111,94,0.3); white-space: nowrap;
     flex-shrink: 0;
   }
   table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; }
@@ -51,12 +51,12 @@
   #empty { font-size: 13px; color: #999; margin-top: 12px; text-align: center; }
 
   /* 보건일지 목록 */
-  .nursing-item { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 16px 18px; margin-bottom: 10px; cursor: pointer; }
-  .nursing-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .nursing-child { font-weight: 700; font-size: 17px; }
-  .nursing-caretext { font-size: 15px; color: #1F2A24; }
-  .nursing-badge { font-size: 15px; }
-  .nursing-time { margin-left: auto; font-size: 14px; color: #888; font-weight: 600; }
+  .nursing-item { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 9px 12px; margin-bottom: 6px; cursor: pointer; }
+  .nursing-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .nursing-child { font-weight: 700; font-size: 14px; }
+  .nursing-caretext { font-size: 12px; color: #666; }
+  .nursing-badge { font-size: 13px; }
+  .nursing-time { margin-left: auto; font-size: 12px; color: #999; font-weight: 600; }
   .nursing-report { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #333; }
   #nursingEmpty { font-size: 13px; color: #999; margin-top: 12px; text-align: center; }
 
@@ -157,10 +157,10 @@
         <div id="nursingList"></div>
         <div id="nursingEmpty">불러오는 중...</div>
 
-        <div id="nursingPagination" style="display:none; align-items:center; justify-content:center; gap:14px; margin-top:14px;">
-          <button type="button" id="nursingPrevBtn" style="padding:6px 12px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:13px; cursor:pointer; -webkit-appearance:none; appearance:none;">‹ 이전</button>
-          <span id="nursingPageLabel" style="font-size:13px; color:#666;"></span>
-          <button type="button" id="nursingNextBtn" style="padding:6px 12px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:13px; cursor:pointer; -webkit-appearance:none; appearance:none;">다음 ›</button>
+        <div id="nursingPagination" style="display:none; align-items:center; justify-content:center; gap:12px; margin-top:8px;">
+          <button type="button" id="nursingPrevBtn" style="padding:4px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:12px; cursor:pointer; -webkit-appearance:none; appearance:none;">‹ 이전</button>
+          <span id="nursingPageLabel" style="font-size:12px; color:#666;"></span>
+          <button type="button" id="nursingNextBtn" style="padding:4px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:12px; cursor:pointer; -webkit-appearance:none; appearance:none;">다음 ›</button>
         </div>
       </div>
 
