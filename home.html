@@ -9,7 +9,15 @@
   body { font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; margin: 0; padding: 20px; background: #F7F5EF; color: #1F2A24; }
   h1 { font-size: 18px; margin: 0 0 16px; }
 
-  /* 요약 카드 두 개를 나란히 배치합니다 */
+  /* 탭 바 */
+  #tabBar { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab-btn {
+    flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #ccc; background: #fff;
+    color: #666; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+    -webkit-appearance: none; appearance: none;
+  }
+  .tab-btn.active { background: #2F6F5E; border-color: #2F6F5E; color: #fff; }
+
   .stat-cards { display: flex; gap: 12px; margin-bottom: 20px; }
   .stat-card { flex: 1; box-sizing: border-box; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 16px; }
   .stat-label { font-size: 12px; color: #888; margin-bottom: 6px; }
@@ -17,25 +25,10 @@
   .stat-value.warn { color: #B7791F; }
 
   .scan-btn {
-    display: block;
-    box-sizing: border-box;
-    width: 100%;
-    text-align: center;
-    padding: 14px;
-    border-radius: 10px;
-    background: #2F6F5E;
-    color: #fff;
-    text-decoration: none;
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 20px;
-    font-family: inherit;
-    border: none;
-    cursor: pointer;
-    /* 브라우저가 <button> 태그에 기본으로 입히는 회색 버튼 모양(테두리, 그림자 등)을
-       꺼서, 우리가 지정한 초록색 스타일이 그대로 적용되게 합니다. */
-    -webkit-appearance: none;
-    appearance: none;
+    display: block; box-sizing: border-box; width: 100%; text-align: center; padding: 14px;
+    border-radius: 10px; background: #2F6F5E; color: #fff; text-decoration: none;
+    font-size: 15px; font-weight: 600; margin-bottom: 20px; font-family: inherit;
+    border: none; cursor: pointer; -webkit-appearance: none; appearance: none;
   }
 
   h2 { font-size: 15px; margin: 0 0 10px; }
@@ -43,14 +36,24 @@
   th, td { padding: 10px 12px; font-size: 13px; text-align: left; border-bottom: 1px solid #eee; }
   th { background: #FAF9F5; color: #666; }
   .dday-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(183,121,31,0.12); color: #B7791F; font-size: 12px; font-weight: 600; }
-  /* 이미 유통기한이 지난("지남") 항목은 임박(D-1 등)보다 더 위급하므로,
-     주황색이 아니라 빨간색으로 눈에 띄게 구분합니다. */
-  /* 연한 빨간 글씨 대신, 진한 빨간 배경 + 흰 글씨로 아예 형태를 다르게 만들어서
-     주황색 배지와 한눈에 구분되게 합니다. */
   .dday-badge.expired { background: #DC2626; color: #fff; font-weight: 700; }
   #empty { font-size: 13px; color: #999; margin-top: 12px; text-align: center; }
 
-  /* 화면 오른쪽 아래에 항상 떠 있는 피드백 버튼 */
+  /* 보건일지 목록 */
+  .nursing-item { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
+  .nursing-top { display: flex; align-items: center; gap: 8px; }
+  .nursing-child { font-weight: 700; font-size: 15px; }
+  .nursing-badge { font-size: 14px; }
+  .nursing-time { margin-left: auto; font-size: 12px; color: #999; }
+  .nursing-report { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #333; }
+  #nursingEmpty { font-size: 13px; color: #999; margin-top: 12px; text-align: center; }
+
+  #qrBox { display: none; text-align: center; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+
+  #homeQrBox { display: none; margin-top: 20px; }
+  #qrToggleBtn { width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 10px; border: 1px solid #eee; background: #fff; font-size: 13px; color: #666; cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none; }
+  #qrContent { display: none; text-align: center; background: #fff; border: 1px solid #eee; border-top: none; border-radius: 0 0 10px 10px; padding: 20px; }
+
   #feedbackFab {
     position: fixed; right: 16px; bottom: 16px; z-index: 500;
     padding: 12px 18px; border-radius: 999px; border: none;
@@ -58,7 +61,6 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; font-family: inherit;
     -webkit-appearance: none; appearance: none;
   }
-  /* 버튼을 누르면 뜨는 어두운 배경(오버레이) + 가운데 흰 박스(모달) */
   #feedbackModal {
     position: fixed; inset: 0; background: rgba(0,0,0,0.45);
     display: none; align-items: center; justify-content: center;
@@ -71,12 +73,9 @@
   #feedbackStatus { font-size: 12px; color: #888; margin-top: 8px; min-height: 16px; }
   .feedback-actions { display: flex; gap: 8px; margin-top: 12px; }
   .feedback-actions button { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 14px; cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none; }
+  #feedbackCancel { background: #eee; color: #333; }
+  #feedbackSubmit { background: #2F6F5E; color: #fff; font-weight: 600; }
 
-  /* 전송 중 화면 전체(피드백 창 포함)를 덮는 큼직한 로딩 표시입니다.
-     이게 떠 있는 동안은 뒤에 있는 어떤 버튼도 물리적으로 클릭할 수 없습니다
-     (오버레이가 그 위를 완전히 덮어서 클릭 자체가 오버레이한테 먼저 잡히기 때문입니다). */
-  /* 화면 전체를 덮는 로딩 표시들이 공통으로 쓰는 큼직한 스피너입니다.
-     페이지 첫 로딩, 피드백 전송 둘 다 이 스타일을 씁니다. */
   .big-spinner {
     width: 68px; height: 68px; border: 6px solid rgba(47, 111, 94, 0.12);
     border-top-color: #2F6F5E; border-radius: 50%; animation: bigspin 0.9s linear infinite;
@@ -97,20 +96,11 @@
   }
   #feedbackLoadingOverlay .loading-text { margin-top: 20px; font-size: 19px; font-weight: 700; color: #1F2A24; }
   #feedbackLoadingOverlay .loading-sub { margin-top: 8px; font-size: 14px; color: #888; }
-    /* 화면 왼쪽 아래에 작게 표시되는 버전 번호입니다. GitHub Pages는 반영까지
-     시간이 좀 걸려서, 지금 보고 있는 화면이 최신 버전인지 눈으로 바로
-     확인하기 위한 용도입니다. */
-  #versionTag {
-    position: fixed; left: 8px; bottom: 8px; z-index: 400;
-    font-size: 10px; color: #bbb; font-family: monospace;
-  }
-  #feedbackCancel { background: #eee; color: #333; }
-  #feedbackSubmit { background: #2F6F5E; color: #fff; font-weight: 600; }
+
+  #versionTag { position: fixed; left: 8px; bottom: 8px; z-index: 400; font-size: 10px; color: #bbb; font-family: monospace; }
 </style>
 </head>
 <body>
-  <!-- 페이지를 처음 열었을 때, 통계·목록을 다 불러올 때까지 화면 전체를
-       덮는 로딩 표시입니다. 다 불러오면 자바스크립트에서 숨깁니다. -->
   <div id="pageLoadingOverlay">
     <div class="big-spinner"></div>
     <div class="page-loading-text">정보를 불러오고 있어요...</div>
@@ -118,73 +108,68 @@
 
   <h1>보건실 관리시스템</h1>
 
-  <div class="stat-cards">
-    <div class="stat-card">
-      <div class="stat-label">전체 등록 약품</div>
-      <div class="stat-value" id="totalCount">–</div>
+  <div id="tabBar">
+    <button type="button" class="tab-btn active" id="tabBtnNursing">보건일지</button>
+    <button type="button" class="tab-btn" id="tabBtnMeds">약품관리</button>
+  </div>
+
+  <!-- ── 보건일지 탭 ── -->
+  <div id="tabNursing">
+    <a class="scan-btn" href="nursing-log.html">보건일지 작성하기</a>
+
+    <h2>최근 보건일지</h2>
+    <div id="nursingList"></div>
+    <div id="nursingEmpty">불러오는 중...</div>
+  </div>
+
+  <!-- ── 약품관리 탭 ── -->
+  <div id="tabMeds" style="display:none;">
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="stat-label">전체 등록 약품</div>
+        <div class="stat-value" id="totalCount">–</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">유통기한 임박 (30일 이내)</div>
+        <div class="stat-value warn" id="expiringCount">–</div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-label">유통기한 임박 (30일 이내)</div>
-      <div class="stat-value warn" id="expiringCount">–</div>
+
+    <button type="button" id="scanBtn" class="scan-btn" style="border: none; cursor: pointer;">약품 바코드 스캔하기</button>
+
+    <div id="qrBox">
+      <div style="font-size: 13px; color: #666; margin-bottom: 12px;">휴대폰 카메라로 아래 QR코드를 스캔하세요</div>
+      <img id="qrImg" width="200" height="200" alt="스캔 페이지 QR코드">
+    </div>
+
+    <h2>유통기한 임박 약품</h2>
+    <table id="table" style="display:none;">
+      <thead><tr><th>약품명</th><th>유통기한</th><th>상태</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="empty">불러오는 중...</div>
+
+    <div id="homeQrBox">
+      <button type="button" id="qrToggleBtn">
+        <span>스마트폰으로 이 화면 바로 열기</span>
+        <span id="qrToggleArrow">▼</span>
+      </button>
+      <div id="qrContent">
+        <img id="homeQrImg" width="160" height="160" alt="홈 화면 QR코드">
+      </div>
     </div>
   </div>
 
-  <!-- 스캐너 페이지(index.html)로 이동하는 버튼입니다. 같은 저장소 안에 있으므로
-       상대경로(index.html)로 연결합니다. -->
-  <!-- PC에서는 버튼을 누르면 아래 QR 코드가 나타나고, 모바일에서는 버튼을 누르면
-       바로 스캔 페이지로 이동합니다. 어느 쪽인지는 아래 스크립트에서 기기를 판별해 정합니다. -->
-  <button type="button" id="scanBtn" class="scan-btn" style="width: 100%; border: none; cursor: pointer;">약품 바코드 스캔하기</button>
-
-  <a class="scan-btn" href="nursing-log.html" style="display: block; text-align: center; text-decoration: none; box-sizing: border-box;">보건일지 작성하기</a>
-
-  <!-- PC에서만 보이는 QR 코드 영역입니다. 평소엔 숨겨져 있습니다. -->
-  <div id="qrBox" style="display: none; text-align: center; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-    <div style="font-size: 13px; color: #666; margin-bottom: 12px;">휴대폰 카메라로 아래 QR코드를 스캔하세요</div>
-    <img id="qrImg" width="200" height="200" alt="스캔 페이지 QR코드">
-  </div>
-
-  <h2>유통기한 임박 약품</h2>
-  <table id="table" style="display:none;">
-    <thead><tr><th>약품명</th><th>유통기한</th><th>상태</th></tr></thead>
-    <tbody id="tbody"></tbody>
-  </table>
-  <div id="empty">불러오는 중...</div>
-
-  <!-- PC에서 이 화면을 볼 때, 스마트폰으로 같은 화면을 바로 열 수 있게 QR코드를
-       보여주는 영역입니다. 다른 정보(요약 카드, 임박 목록)를 먼저 다 보여주고,
-       화면 맨 아래에 배치해서 위쪽 공간을 최대한 확보합니다. 평소엔 작은 버튼
-       한 줄만 차지하고, 눌러야 QR이 펼쳐집니다. 폰에서 볼 땐 아예 안 보입니다. -->
-  <div id="homeQrBox" style="display: none; margin-top: 20px;">
-    <button type="button" id="qrToggleBtn" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 10px; border: 1px solid #eee; background: #fff; font-size: 13px; color: #666; cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none;">
-      <span>스마트폰으로 이 화면 바로 열기</span>
-      <span id="qrToggleArrow">▼</span>
-    </button>
-    <div id="qrContent" style="display: none; text-align: center; background: #fff; border: 1px solid #eee; border-top: none; border-radius: 0 0 10px 10px; padding: 20px;">
-      <img id="homeQrImg" width="160" height="160" alt="홈 화면 QR코드">
-    </div>
-  </div>
-
-  <!-- 화면 오른쪽 아래에 항상 떠 있는 피드백 버튼입니다 -->
   <button type="button" id="feedbackFab">💬 피드백</button>
 
-  <!-- 버튼을 누르면 뜨는 입력창입니다. 평소엔 숨겨져 있습니다. -->
   <div id="feedbackModal">
     <div class="feedback-box">
       <h3>바꾸고 싶은 점을 알려주세요</h3>
       <textarea id="feedbackText" placeholder="예: 약품명 칸이 너무 작아요, 이 버튼 위치를 바꿔주세요 등"></textarea>
-      <label class="feedback-checkbox" id="desktopCaptureRow">
+      <label class="feedback-checkbox">
         <input type="checkbox" id="includeScreenshot" checked>
         지금 보고 있는 화면 캡처를 같이 보내기
       </label>
-
-      <!-- 모바일은 진짜 화면공유(getDisplayMedia)를 못 쓰는 경우가 많아서,
-           대신 폰 자체 스크린샷 기능으로 미리 찍어둔 사진을 갤러리에서
-           골라 첨부하는 방식을 씁니다. -->
-      <div class="feedback-checkbox" id="mobileCaptureRow" style="display:none;">
-        <button type="button" id="attachScreenshotBtn" style="padding:6px 10px;border-radius:6px;border:1px solid #ccc;background:#fff;font-size:12px;cursor:pointer;-webkit-appearance:none;appearance:none;">📎 스크린샷 첨부</button>
-        <span id="attachedFileName" style="margin-left:8px;color:#666;"></span>
-        <input type="file" id="screenshotFileInput" accept="image/*" style="display:none;">
-      </div>
       <div id="feedbackStatus"></div>
       <div class="feedback-actions">
         <button type="button" id="feedbackCancel">취소</button>
@@ -192,9 +177,6 @@
       </div>
     </div>
   </div>
-    <!-- 전송 중에만 나타나는 전체 화면 로딩 표시입니다. z-index가 피드백 창보다
-       높아서(700 vs 600), 떠 있는 동안은 입력창의 "보내기"·"취소" 버튼이
-       화면에 보여도 실제로는 이 오버레이가 클릭을 가로채서 눌리지 않습니다. -->
   <div id="feedbackLoadingOverlay">
     <div class="big-spinner"></div>
     <div class="loading-text">전송 중이에요...</div>
@@ -202,44 +184,75 @@
   </div>
 
   <script>
-    // ▼▼ Apps Script 웹 앱의 실제 exec 주소로 바꿔주세요 (scanner.html과 동일한 주소) ▼▼
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
-    // 접속한 기기가 PC인지 모바일인지 판별합니다.
     var isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if (isMobileDevice) document.body.classList.add('is-mobile');
 
-    // PC일 때만, 접었다 펼 수 있는 QR 영역을 보여줍니다. 평소엔 접힌 상태로
-    // 시작해서(qrContent가 display:none) 화면 공간을 아낍니다.
-    if (!isMobileDevice) {
-      document.getElementById('homeQrBox').style.display = 'block';
+    // ── 탭 전환 ──────────────────────────────
+    var tabBtnNursing = document.getElementById('tabBtnNursing');
+    var tabBtnMeds = document.getElementById('tabBtnMeds');
+    var tabNursing = document.getElementById('tabNursing');
+    var tabMeds = document.getElementById('tabMeds');
 
-      var qrToggleBtn = document.getElementById('qrToggleBtn');
-      var qrContent = document.getElementById('qrContent');
-      var qrToggleArrow = document.getElementById('qrToggleArrow');
-      var qrImageLoaded = false; // QR 이미지를 이미 한 번 불러왔는지 표시 (중복 요청 방지용)
+    function showTab(name) {
+      var isNursing = name === 'nursing';
+      tabNursing.style.display = isNursing ? 'block' : 'none';
+      tabMeds.style.display = isNursing ? 'none' : 'block';
+      tabBtnNursing.classList.toggle('active', isNursing);
+      tabBtnMeds.classList.toggle('active', !isNursing);
+    }
+    tabBtnNursing.addEventListener('click', function () { showTab('nursing'); });
+    tabBtnMeds.addEventListener('click', function () { showTab('meds'); });
 
-      qrToggleBtn.addEventListener('click', function () {
-        var isOpen = qrContent.style.display === 'block';
-        qrContent.style.display = isOpen ? 'none' : 'block';
-        qrToggleArrow.textContent = isOpen ? '▼' : '▲';
+    // ── 보건일지 목록 불러오기 ──────────────────────────────
+    function renderNursingList(items) {
+      var listEl = document.getElementById('nursingList');
+      var emptyEl = document.getElementById('nursingEmpty');
+      listEl.innerHTML = '';
 
-        // 처음 펼칠 때만 QR 이미지를 실제로 만들어서 불러옵니다.
-        // (미리 만들어두지 않는 이유: 어차피 안 펼치는 사람도 있을 텐데,
-        // 매번 페이지를 열 때마다 QR 이미지를 미리 받아오면 낭비이기 때문입니다.)
-        if (!qrImageLoaded) {
-          var cleanHomeUrl = window.location.href.split('?')[0];
-          document.getElementById('homeQrImg').src =
-            'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(cleanHomeUrl);
-          qrImageLoaded = true;
-        }
+      if (!items || items.length === 0) {
+        emptyEl.textContent = '등록된 보건일지가 없습니다.';
+        return;
+      }
+      emptyEl.style.display = 'none';
+
+      var badgeMap = { 'AI': '✨', '수동': '⚠️', '수정됨': '✏️' };
+
+      items.forEach(function (item) {
+        var row = document.createElement('div');
+        row.className = 'nursing-item';
+
+        var badge = badgeMap[item.aiUsed] || '';
+        row.innerHTML =
+          '<div class="nursing-top">' +
+          '<span class="nursing-child">' + item.childName + '</span>' +
+          '<span class="nursing-badge">' + badge + '</span>' +
+          '<span class="nursing-time">' + item.visitDateTime + '</span>' +
+          '</div>' +
+          '<div class="nursing-report"></div>';
+
+        row.querySelector('.nursing-report').textContent = item.report;
+
+        row.addEventListener('click', function () {
+          var reportEl = row.querySelector('.nursing-report');
+          reportEl.style.display = reportEl.style.display === 'block' ? 'none' : 'block';
+        });
+
+        listEl.appendChild(row);
       });
     }
-    // google.script.run은 Apps Script가 직접 서빙하는 페이지 안에서만 쓸 수 있는
-    // 기능이라, 이 페이지(GitHub Pages)에서는 쓸 수 없습니다. 대신 일반적인
-    // fetch로 Apps Script의 doGet(?action=stats)을 호출해서 데이터만 받아옵니다.
-    fetch(GAS_URL + '?action=stats')
+
+    var nursingListPromise = fetch(GAS_URL + '?action=nursingLogList')
+      .then(function (res) { return res.json(); })
+      .then(function (items) { renderNursingList(items); })
+      .catch(function () {
+        document.getElementById('nursingEmpty').textContent = '불러오지 못했습니다.';
+      });
+
+    // ── 약품관리 통계·목록 불러오기 ──────────────────────────────
+    var statsPromise = fetch(GAS_URL + '?action=stats')
       .then(function (res) { return res.json(); })
       .then(function (stats) {
-        document.getElementById('pageLoadingOverlay').style.display = 'none';
         document.getElementById('totalCount').textContent = stats.total;
         document.getElementById('expiringCount').textContent = stats.expiringSoon;
 
@@ -257,8 +270,6 @@
           var tr = document.createElement('tr');
           var isExpired = item.dday < 0;
           var ddayText = isExpired ? '지남' : ('D-' + item.dday);
-          // 지난 항목이면 "dday-badge expired" 두 클래스를 같이 줘서 빨간색이 적용되게 하고,
-          // 아직 안 지났으면 기존처럼 "dday-badge"만 줘서 주황색을 유지합니다.
           var badgeClass = isExpired ? 'dday-badge expired' : 'dday-badge';
           tr.innerHTML = '<td>' + item.name + '</td><td>' + item.expiry + '</td><td><span class="' + badgeClass + '">' + ddayText + '</span></td>';
           tbody.appendChild(tr);
@@ -266,41 +277,57 @@
         document.getElementById('table').style.display = 'table';
       })
       .catch(function () {
-        document.getElementById('pageLoadingOverlay').style.display = 'none';
         document.getElementById('empty').textContent = '데이터를 불러오지 못했습니다.';
       });
-      // 이 페이지(home.html)와 같은 폴더에 있는 스캔 페이지(index.html)의 전체 주소입니다.
-    // QR코드는 폰이 아닌 다른 기기(PC)에서 찍는 것이므로, 상대경로가 아니라
-    // 완전한 주소(https://...)로 만들어줘야 폰에서 스캔했을 때 정확히 열립니다.
+
+    // 두 데이터를 다 불러오면(또는 실패해도) 첫 로딩 화면을 걷습니다.
+    Promise.all([nursingListPromise, statsPromise]).then(function () {
+      document.getElementById('pageLoadingOverlay').style.display = 'none';
+    });
+
+    // ── 약품관리 탭: QR·스캔 관련 ──────────────────────────────
+    if (!isMobileDevice) {
+      document.getElementById('homeQrBox').style.display = 'block';
+
+      var qrToggleBtn = document.getElementById('qrToggleBtn');
+      var qrContent = document.getElementById('qrContent');
+      var qrToggleArrow = document.getElementById('qrToggleArrow');
+      var qrImageLoaded = false;
+
+      qrToggleBtn.addEventListener('click', function () {
+        var isOpen = qrContent.style.display === 'block';
+        qrContent.style.display = isOpen ? 'none' : 'block';
+        qrToggleArrow.textContent = isOpen ? '▼' : '▲';
+
+        if (!qrImageLoaded) {
+          var cleanHomeUrl = window.location.href.split('?')[0];
+          document.getElementById('homeQrImg').src =
+            'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(cleanHomeUrl);
+          qrImageLoaded = true;
+        }
+      });
+    }
+
     var scannerUrl = window.location.href.replace('home.html', 'index.html');
-
-    // 접속한 기기가 휴대폰/태블릿인지 아닌지를 브라우저 정보(User-Agent)로 판별합니다.
-    // 완벽하진 않지만, 일반적인 PC와 모바일을 구분하는 데는 충분합니다.
-    var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-
     var scanBtn = document.getElementById('scanBtn');
     var qrBox = document.getElementById('qrBox');
 
     scanBtn.addEventListener('click', function () {
-      if (isMobile) {
-        // 모바일이면 QR 코드를 보여줄 필요 없이, 바로 스캔 페이지로 이동합니다.
+      if (isMobileDevice) {
         window.location.href = 'index.html';
       } else {
-        // PC면 이동하지 않고, QR 코드 영역을 보여줍니다(이미 열려있으면 다시 숨김).
         var isShown = qrBox.style.display === 'block';
         qrBox.style.display = isShown ? 'none' : 'block';
         if (!isShown) {
-          // QR 이미지는 필요할 때(처음 열 때)만 만들어서, 불필요한 요청을 줄입니다.
           document.getElementById('qrImg').src =
             'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(scannerUrl);
         }
       }
-    });  
-        // ── 피드백 기능 ──────────────────────────────
-    // 피드백은 이 화면 자체의 데이터(GAS_URL)가 아니라, 여러 프로젝트를 모아서
-    // 관리하는 개발자콘솔(no2yes1 계정)로 보냅니다.
+    });
+
+    // ── 피드백 기능 ──────────────────────────────
     var DEV_CONSOLE_URL = 'https://script.google.com/macros/s/AKfycbyaPRuDlrSFI9pEkC7lluAGI3ql-pnBRuLRGGt5L4ZHgXabZYau251ClzYyHPahRgZB/exec';
-    var PROJECT_NAME = '보건실 관리시스템'; // 개발자콘솔 화면에서 이 이름으로 필터링됩니다.
+    var PROJECT_NAME = '보건실 관리시스템';
 
     var feedbackFab = document.getElementById('feedbackFab');
     var feedbackModal = document.getElementById('feedbackModal');
@@ -308,57 +335,14 @@
     var feedbackStatus = document.getElementById('feedbackStatus');
     var includeScreenshot = document.getElementById('includeScreenshot');
 
-    // 모바일에서 첨부한 스크린샷 파일을 담아둘 변수입니다.
-    var attachScreenshotBtn = document.getElementById('attachScreenshotBtn');
-    var screenshotFileInput = document.getElementById('screenshotFileInput');
-    var attachedFileName = document.getElementById('attachedFileName');
-    var attachedScreenshotDataUrl = null;
-
-    if (isMobile) {
-      document.getElementById('desktopCaptureRow').style.display = 'none';
-      document.getElementById('mobileCaptureRow').style.display = 'block';
-    }
-
-    attachScreenshotBtn.addEventListener('click', function () {
-      screenshotFileInput.click();
-    });
-
-    screenshotFileInput.addEventListener('change', function () {
-      var file = screenshotFileInput.files[0];
-      if (!file) return;
-      attachedFileName.textContent = '불러오는 중...';
-
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        var img = new Image();
-        img.onload = function () {
-          // 화면 캡처는 사진이 아니라 UI(글자·버튼)라서, 해상도를 더 낮춰도
-          // 알아보는 데는 문제없습니다. 700px + 화질 45%로 더 공격적으로 줄입니다.
-          var maxWidth = 700;
-          var scaleRatio = Math.min(1, maxWidth / img.width);
-          var canvas = document.createElement('canvas');
-          canvas.width = img.width * scaleRatio;
-          canvas.height = img.height * scaleRatio;
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          attachedScreenshotDataUrl = canvas.toDataURL('image/jpeg', 0.45);
-          attachedFileName.textContent = '첨부됨 ✓';
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-
     feedbackFab.addEventListener('click', function () {
-      includeScreenshot.checked = true; // 매번 새로 열 때 항상 체크된 상태로 시작합니다.
+      includeScreenshot.checked = true;
       feedbackModal.style.display = 'flex';
     });
     document.getElementById('feedbackCancel').addEventListener('click', function () {
       feedbackModal.style.display = 'none';
     });
-    // 글 내용을 먼저 보내고, 이미지가 있으면 그다음 별도로 이어서 보냅니다.
-    // 두 단계로 나눈 이유: 글은 용량이 작아 항상 빠르고 확실하게 저장되고,
-    // 이미지(무거운 부분)가 설령 오래 걸리거나 실패해도 글까지 같이 날아가지
-    // 않습니다.
+
     function sendFeedback(screenshotDataUrl) {
       document.getElementById('feedbackLoadingOverlay').style.display = 'flex';
       document.getElementById('feedbackSubmit').disabled = true;
@@ -367,9 +351,6 @@
       var loadingText = document.querySelector('#feedbackLoadingOverlay .loading-text');
       var loadingSub = document.querySelector('#feedbackLoadingOverlay .loading-sub');
 
-      // 글 내용을 저장하는 요청입니다. 구글 Apps Script가 가끔 일시적으로
-      // 응답을 못 줄 때가 있어서(저희 쪽 문제가 아닌 구글 인프라 변수),
-      // 처음 실패하면 0.8초 후 한 번 더 자동으로 시도합니다.
       function saveTextStep(attempt) {
         return fetch(DEV_CONSOLE_URL, {
           method: 'POST',
@@ -391,7 +372,6 @@
         });
       }
 
-      // 1단계: 글 내용 먼저 전송
       saveTextStep(1)
         .then(function (res) { return res.json(); })
         .then(function (data) {
@@ -399,11 +379,6 @@
             throw new Error(data && data.error ? data.error : '알 수 없는 오류');
           }
 
-          // AI 요약은 여기서 결과를 기다리지 않습니다(fire-and-forget).
-          // .then/.catch를 걸어두긴 하지만, 그 응답이 올 때까지 화면이
-          // 멈춰있지 않고 바로 다음 단계(이미지 전송 또는 완료 처리)로
-          // 넘어갑니다. 실패해도 조용히 무시합니다 — 제목이 안 붙는 것뿐,
-          // 글 내용 자체는 이미 안전하게 저장된 뒤라 문제가 없습니다.
           fetch(DEV_CONSOLE_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -412,19 +387,13 @@
               rowIndex: data.rowIndex,
               message: feedbackText.value.trim()
             })
-          }).catch(function () { /* 조용히 무시 */ });
+          }).catch(function () {});
 
-          // 글은 이미 저장 완료. 이미지가 없으면 여기서 끝냅니다.
           if (!screenshotDataUrl) {
             finishSuccess('감사합니다');
             return;
           }
 
-          // 2단계: 이미지를 별도로 이어서 전송합니다.
-          // Content-Type을 image/jpeg처럼 특수하게 지정하면, 브라우저가
-          // "사전 확인 요청"을 자동으로 보내는데 Apps Script가 이걸 처리하지
-          // 못해서 요청 자체가 막힙니다. 그래서 지금까지 계속 안정적으로
-          // 작동했던 방식(text/plain으로 감싸서 JSON 전송)을 그대로 씁니다.
           loadingText.textContent = '캡처 업로드 중...';
           loadingSub.textContent = '조금만 기다려 주세요';
 
@@ -462,8 +431,7 @@
         loadingSub.textContent = subText;
         feedbackText.value = '';
         attachedScreenshotDataUrl = null;
-        if (attachedFileName) attachedFileName.textContent = '';
-        if (screenshotFileInput) screenshotFileInput.value = '';
+        if (typeof attachedFileName !== 'undefined' && attachedFileName) attachedFileName.textContent = '';
         setTimeout(function () {
           document.getElementById('feedbackLoadingOverlay').style.display = 'none';
           document.getElementById('feedbackSubmit').disabled = false;
@@ -476,10 +444,6 @@
       }
     }
 
-    // 진짜 화면을 캡처하는 함수입니다. html2canvas처럼 "재구성해서 그리는"
-    // 방식이 아니라, 브라우저 자체의 화면 공유 기능을 이용해서 실제로
-    // 지금 보이는 그대로를 찍습니다. 그래서 사용자의 명시적인 허용이
-    // 매번 필요합니다(보안상 생략할 수 없는 절차입니다).
     function captureRealScreenshot() {
       return navigator.mediaDevices.getDisplayMedia({ video: true }).then(function (stream) {
         var video = document.createElement('video');
@@ -488,24 +452,20 @@
         return new Promise(function (resolve, reject) {
           video.onloadedmetadata = function () {
             video.play();
-            // 화면 공유가 시작된 직후 첫 프레임은 아직 비어있을 수 있어서,
-            // 아주 잠깐(0.3초) 기다렸다가 캡처합니다.
             setTimeout(function () {
-              // 화면 크기(해상도)는 원본 그대로 유지하고, 압축률(화질)만
-              // 낮춰서 파일 용량을 줄입니다.
               var canvas = document.createElement('canvas');
               canvas.width = video.videoWidth;
               canvas.height = video.videoHeight;
               canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-
               stream.getTracks().forEach(function (t) { t.stop(); });
-
               resolve(canvas.toDataURL('image/jpeg', 0.25));
             }, 300);
           };
         });
       });
     }
+
+    var attachedScreenshotDataUrl = null;
 
     document.getElementById('feedbackSubmit').addEventListener('click', function () {
       if (!feedbackText.value.trim()) {
@@ -514,7 +474,7 @@
       }
       feedbackStatus.textContent = '전송 중...';
 
-      if (isMobile) {
+      if (isMobileDevice) {
         sendFeedback(attachedScreenshotDataUrl || '');
         return;
       }
@@ -537,6 +497,6 @@
       }
     });
   </script>
-  <div id="versionTag">v2026-09-24-15</div>
+  <div id="versionTag">v2026-09-25-1</div>
 </body>
 </html>
