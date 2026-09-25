@@ -49,7 +49,14 @@
   .scan-card .scan-sub { font-size: 12px; opacity: 0.85; margin-top: 2px; }
   .scan-card .scan-arrow { flex-shrink: 0; opacity: 0.8; }
   h2 { font-size: 14px; margin: 0 0 8px; }
-
+  /* 오늘/이번 주/이번 달 방문 아동 수 카드 */
+  .quick-stat-cards { display: flex; gap: 8px; margin-bottom: 14px; }
+  .quick-stat-card {
+    flex: 1; text-align: center; background: #fff; border: 1px solid #eee;
+    border-radius: 12px; padding: 12px 8px;
+  }
+  .quick-stat-num { font-size: 22px; font-weight: 800; color: #2F6F5E; }
+  .quick-stat-label { font-size: 11px; color: #888; margin-top: 2px; }
   /* "최근 보건일지" 제목과 "새 일지 작성" 버튼을 한 줄 양 끝에 배치합니다 */
   .nursing-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 10px; }
   .write-log-btn {
@@ -191,6 +198,21 @@
 
       <!-- ── 보건일지 탭 내용 ── -->
       <div id="tabNursing">
+        <div class="quick-stat-cards">
+          <div class="quick-stat-card">
+            <div class="quick-stat-num" id="quickStatToday">–</div>
+            <div class="quick-stat-label">오늘 방문</div>
+          </div>
+          <div class="quick-stat-card">
+            <div class="quick-stat-num" id="quickStatWeek">–</div>
+            <div class="quick-stat-label">이번 주 방문</div>
+          </div>
+          <div class="quick-stat-card">
+            <div class="quick-stat-num" id="quickStatMonth">–</div>
+            <div class="quick-stat-label">이번 달 방문</div>
+          </div>
+        </div>
+
         <div class="nursing-list-header">
           <h2 style="margin:0;">최근 보건일지</h2>
           <div style="display:flex; gap:8px;">
@@ -413,7 +435,7 @@
     }
 
     var nursingCurrentPage = 1;
-    var nursingPageSize = 10;
+    var nursingPageSize = 8;
 
     function loadNursingPage(page) {
       var nursingLoadingEl = document.getElementById('nursingListLoadingOverlay');
@@ -458,6 +480,16 @@
     });
 
     var nursingListPromise = loadNursingPage(1);
+
+    // 오늘/이번 주/이번 달 방문 아동 수(중복 인원 제외)를 불러와 카드에 채웁니다.
+    fetch(GAS_URL + '?action=nursingQuickStats')
+      .then(function (res) { return res.json(); })
+      .then(function (stats) {
+        document.getElementById('quickStatToday').textContent = stats.today;
+        document.getElementById('quickStatWeek').textContent = stats.week;
+        document.getElementById('quickStatMonth').textContent = stats.month;
+      })
+      .catch(function () {});
 
     // ── 이번 달 달력 (이전/다음 버튼으로 다른 달도 볼 수 있습니다) ──────────────────────────────
     var now = new Date();
