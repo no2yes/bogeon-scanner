@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>사용법</title>
+<style>
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: #F7F5EF; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; margin: 0; padding: 20px; background: #F7F5EF; color: #1F2A24; max-width: 640px; margin-left: auto; margin-right: auto; box-sizing: border-box; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+
+  a.back-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; margin-bottom: 14px; border-radius: 999px; border: 1px solid #2F6F5E; background: #fff; font-size: 14px; font-weight: 600; color: #2F6F5E; text-decoration: none; }
+
+  .search-box { display: flex; gap: 8px; margin-bottom: 8px; }
+  #searchInput {
+    flex: 1; box-sizing: border-box; border-radius: 10px; border: 1px solid #ccc;
+    padding: 12px 14px; font-family: inherit; font-size: 15px;
+  }
+  #searchBtn {
+    flex-shrink: 0; padding: 0 18px; border-radius: 10px; border: none;
+    background: #2F6F5E; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
+    font-family: inherit; -webkit-appearance: none; appearance: none;
+  }
+  #searchStatus { font-size: 12px; color: #888; margin-bottom: 16px; min-height: 16px; }
+
+  .faq-item { background: #fff; border: 1px solid #eee; border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
+  .faq-question {
+    width: 100%; box-sizing: border-box; padding: 14px 16px; text-align: left;
+    background: #fff; border: none; font-size: 15px; font-weight: 600; color: #1F2A24;
+    cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: space-between;
+    -webkit-appearance: none; appearance: none;
+  }
+  .faq-question .arrow { flex-shrink: 0; transition: transform 0.2s; color: #2F6F5E; }
+  .faq-item.open .faq-question .arrow { transform: rotate(180deg); }
+  .faq-item.open .faq-question { background: #EAF2EE; }
+  .faq-answer {
+    display: none; padding: 0 16px 16px; font-size: 14px; line-height: 1.7; color: #444;
+  }
+  .faq-item.open .faq-answer { display: block; }
+  .faq-item.highlight { border-color: #2F6F5E; box-shadow: 0 0 0 2px rgba(47,111,94,0.15); }
+</style>
+</head>
+<body>
+  <a class="back-link" href="home.html">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    홈으로
+  </a>
+
+  <h1>사용법</h1>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="궁금한 걸 편하게 물어보세요 (예: 약 버리는 법이 뭐예요?)">
+    <button type="button" id="searchBtn">검색</button>
+  </div>
+  <div id="searchStatus"></div>
+
+  <div id="faqList"></div>
+
+  <script>
+    var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
+    var faqData = [];
+
+    function renderFaqList() {
+      var listEl = document.getElementById('faqList');
+      listEl.innerHTML = '';
+
+      faqData.forEach(function (item, index) {
+        var el = document.createElement('div');
+        el.className = 'faq-item';
+        el.id = 'faq-' + index;
+        el.innerHTML =
+          '<button type="button" class="faq-question">' +
+          '<span>' + item.q + '</span>' +
+          '<span class="arrow">▾</span>' +
+          '</button>' +
+          '<div class="faq-answer"></div>';
+
+        el.querySelector('.faq-answer').textContent = item.a;
+
+        el.querySelector('.faq-question').addEventListener('click', function () {
+          var isOpen = el.classList.contains('open');
+          // 아코디언: 열려던 게 아니면(다른 걸 열려는 거면) 전부 닫고 이것만 엽니다.
+          document.querySelectorAll('.faq-item').forEach(function (other) {
+            other.classList.remove('open');
+          });
+          if (!isOpen) el.classList.add('open');
+        });
+
+        listEl.appendChild(el);
+      });
+    }
+
+    fetch(GAS_URL + '?action=manualFaq')
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        faqData = data;
+        renderFaqList();
+      })
+      .catch(function () {
+        document.getElementById('faqList').textContent = '불러오지 못했습니다.';
+      });
+
+    function runSearch() {
+      var question = document.getElementById('searchInput').value.trim();
+      if (!question) return;
+
+      var statusEl = document.getElementById('searchStatus');
+      statusEl.textContent = 'AI가 찾고 있어요...';
+
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ type: 'manualSearch', question: question })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          document.querySelectorAll('.faq-item').forEach(function (el) {
+            el.classList.remove('open', 'highlight');
+          });
+
+          if (data && data.ok && data.index > 0) {
+            var target = document.getElementById('faq-' + (data.index - 1));
+            target.classList.add('open', 'highlight');
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            statusEl.textContent = '';
+            setTimeout(function () { target.classList.remove('highlight'); }, 2000);
+          } else {
+            statusEl.textContent = '관련된 항목을 찾지 못했습니다. 아래 목록에서 직접 찾아보시거나, 표현을 바꿔서 다시 검색해 보세요.';
+          }
+        })
+        .catch(function () {
+          statusEl.textContent = '검색 중 오류가 발생했습니다.';
+        });
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', runSearch);
+    document.getElementById('searchInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') runSearch();
+    });
+  </script>
+</body>
+</html>
