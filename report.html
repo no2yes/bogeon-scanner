@@ -63,6 +63,8 @@
      줘서 이 높이에 딱 맞춰 그리게 합니다 — 그래프 3개 * 이 높이가 예측 가능해져서,
      전체 보고서가 인쇄 시 한 페이지 안에 들어오도록 계산할 수 있습니다. */
   .chart-canvas-wrap { height: 150px; position: relative; }
+  /* 아동별·증상 TOP5 두 그래프는 조금 더 크게 — 아래쪽 여백이 넉넉했던 걸 채우려는 목적입니다. */
+  .chart-canvas-wrap-tall { height: 210px; position: relative; }
 
   .text-summary-box { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; }
 
@@ -80,7 +82,7 @@
 
   /* 인쇄할 때는 버튼·입력창·탭 같은 조작용 요소를 다 숨기고, 결과 내용만 보여줍니다. */
   @media print {
-    @page { margin: 10mm; }
+    @page { margin: 25mm 10mm 10mm 10mm; }
     a.back-link, #reportTypeTabs, .field-box, .copy-btn, #loadingOverlay {
       display: none !important;
     }
@@ -94,7 +96,7 @@
     홈으로
   </a>
 
-  <h1>보건일지 보고서</h1>
+  <h1 id="pageTitle">보건일지 보고서</h1>
 
   <div id="reportTypeTabs">
     <button type="button" class="type-tab-btn active" id="tabWeekly">주간 보고서</button>
@@ -139,12 +141,12 @@
 
     <div class="chart-box">
       <h2>🏆 아동별 방문 횟수 TOP 5</h2>
-      <div class="chart-canvas-wrap"><canvas id="childChart"></canvas></div>
+      <div class="chart-canvas-wrap-tall"><canvas id="childChart"></canvas></div>
     </div>
 
     <div class="chart-box">
       <h2>🩹 주요 증상 TOP 5</h2>
-      <div class="chart-canvas-wrap"><canvas id="symptomChart"></canvas></div>
+      <div class="chart-canvas-wrap-tall"><canvas id="symptomChart"></canvas></div>
     </div>
 
     <button type="button" id="printMonthlyBtn" class="copy-btn" style="border-color:#666; color:#666;">🖨️ 이 대시보드 인쇄</button>
@@ -190,6 +192,7 @@
       monthlyField.style.display = 'none';
       document.getElementById('monthlyResultBox').style.display = 'none';
       document.getElementById('monthlyTextCopySection').style.display = 'none';
+      document.getElementById('pageTitle').textContent = '보건일지 보고서';
     });
     tabMonthly.addEventListener('click', function () {
       reportType = 'monthly';
@@ -263,6 +266,7 @@
       if (!monthVal) { alert('월을 선택해 주세요.'); finishLoading(); return; }
       var range = getMonthRange(monthVal);
       var periodLabel = range.year + '년 ' + range.month + '월';
+      document.getElementById('pageTitle').textContent = range.year + '년' + pad2(range.month) + '월 보건활동 보고서';
 
       fetch(GAS_URL + '?action=periodReport&start=' + range.start + '&end=' + range.end)
         .then(function (res) { return res.json(); })
