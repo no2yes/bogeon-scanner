@@ -303,6 +303,12 @@
     tabBtnNursing.addEventListener('click', function () { showTab('nursing'); });
     tabBtnMeds.addEventListener('click', function () { showTab('meds'); });
 
+    // 주소 끝에 "#meds"가 붙어서 들어오면(예: 스캐너 화면의 "홈으로" 링크),
+    // 기본값인 보건일지 탭 대신 약품관리 탭이 바로 열리게 합니다.
+    if (window.location.hash === '#meds') {
+      showTab('meds');
+    }
+
     // ── 보건일지 목록 불러오기 ──────────────────────────────
     var nursingListMinHeight = 0; // 10개(꽉 찬 페이지) 기준 높이를 여기 기억해둡니다.
 
