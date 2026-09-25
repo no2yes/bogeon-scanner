@@ -144,6 +144,12 @@
         <h2>최근 보건일지</h2>
         <div id="nursingList"></div>
         <div id="nursingEmpty">불러오는 중...</div>
+
+        <div id="nursingPagination" style="display:none; align-items:center; justify-content:center; gap:14px; margin-top:14px;">
+          <button type="button" id="nursingPrevBtn" style="padding:6px 12px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:13px; cursor:pointer; -webkit-appearance:none; appearance:none;">‹ 이전</button>
+          <span id="nursingPageLabel" style="font-size:13px; color:#666;"></span>
+          <button type="button" id="nursingNextBtn" style="padding:6px 12px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:13px; cursor:pointer; -webkit-appearance:none; appearance:none;">다음 ›</button>
+        </div>
       </div>
 
       <div class="nursing-right">
@@ -291,12 +297,45 @@
       });
     }
 
-    var nursingListPromise = fetch(GAS_URL + '?action=nursingLogList')
-      .then(function (res) { return res.json(); })
-      .then(function (items) { renderNursingList(items); })
-      .catch(function () {
-        document.getElementById('nursingEmpty').textContent = '불러오지 못했습니다.';
-      });
+    var nursingCurrentPage = 1;
+    var nursingPageSize = 10;
+
+    function loadNursingPage(page) {
+      return fetch(GAS_URL + '?action=nursingLogList&page=' + page)
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          nursingCurrentPage = page;
+          renderNursingList(data.items);
+          renderNursingPagination(data.totalCount, page);
+        })
+        .catch(function () {
+          document.getElementById('nursingEmpty').textContent = '불러오지 못했습니다.';
+        });
+    }
+
+    function renderNursingPagination(totalCount, page) {
+      var totalPages = Math.max(1, Math.ceil(totalCount / nursingPageSize));
+      var paginationEl = document.getElementById('nursingPagination');
+
+      if (totalCount <= nursingPageSize) {
+        paginationEl.style.display = 'none';
+        return;
+      }
+      paginationEl.style.display = 'flex';
+
+      document.getElementById('nursingPageLabel').textContent = page + ' / ' + totalPages + '페이지';
+      document.getElementById('nursingPrevBtn').disabled = page <= 1;
+      document.getElementById('nursingNextBtn').disabled = page >= totalPages;
+    }
+
+    document.getElementById('nursingPrevBtn').addEventListener('click', function () {
+      if (nursingCurrentPage > 1) loadNursingPage(nursingCurrentPage - 1);
+    });
+    document.getElementById('nursingNextBtn').addEventListener('click', function () {
+      loadNursingPage(nursingCurrentPage + 1);
+    });
+
+    var nursingListPromise = loadNursingPage(1);
 
     // ── 이번 달 달력 (이전/다음 버튼으로 다른 달도 볼 수 있습니다) ──────────────────────────────
     var now = new Date();
@@ -653,4 +692,3 @@
   <div id="versionTag">v2026-09-25-1</div>
 </body>
 </html>
- 
