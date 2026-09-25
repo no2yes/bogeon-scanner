@@ -32,6 +32,17 @@
   }
 
   h2 { font-size: 15px; margin: 0 0 10px; }
+
+  /* "최근 보건일지" 제목과 "새 일지 작성" 버튼을 한 줄 양 끝에 배치합니다 */
+  .nursing-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 10px; }
+  .write-log-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 999px;
+    background: linear-gradient(135deg, #2F6F5E, #3B8B72);
+    color: #fff; font-size: 13px; font-weight: 700; text-decoration: none;
+    box-shadow: 0 3px 8px rgba(47,111,94,0.3); white-space: nowrap;
+    flex-shrink: 0;
+  }
   table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; }
   th, td { padding: 10px 12px; font-size: 13px; text-align: left; border-bottom: 1px solid #eee; }
   th { background: #FAF9F5; color: #666; }
@@ -139,9 +150,10 @@
   <div id="tabNursing">
     <div class="nursing-layout">
       <div class="nursing-left">
-        <a class="scan-btn" href="nursing-log.html">보건일지 작성하기</a>
-
-        <h2>최근 보건일지</h2>
+        <div class="nursing-list-header">
+          <h2 style="margin:0;">최근 보건일지</h2>
+          <a class="write-log-btn" href="nursing-log.html">📝 새 일지 작성</a>
+        </div>
         <div id="nursingList"></div>
         <div id="nursingEmpty">불러오는 중...</div>
 
