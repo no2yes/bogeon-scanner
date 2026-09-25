@@ -110,17 +110,21 @@
   #feedbackLoadingOverlay .loading-sub { margin-top: 8px; font-size: 14px; color: #888; }
 
 
-  /* 보건일지 탭: 목록(왼쪽) + 이번달 달력(오른쪽). 화면이 좁으면 세로로 쌓입니다. */
-  .nursing-layout { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+  /* 보건일지 탭: 목록(왼쪽) + 이번달 달력(오른쪽). 화면이 좁으면 세로로 쌓입니다.
+     align-items를 stretch로 둬서(기본값), 두 칼럼의 세로 높이가 서로 맞춰집니다. */
+  .nursing-layout { display: flex; gap: 20px; flex-wrap: wrap; align-items: stretch; }
   .nursing-left { flex: 1 1 320px; min-width: 260px; }
-  .nursing-right { flex: 1 1 320px; min-width: 260px; }
+  .nursing-right { flex: 1 1 320px; min-width: 260px; display: flex; }
 
-  .calendar-box { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 20px; box-sizing: border-box; }
+  .calendar-box {
+    background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 20px; box-sizing: border-box;
+    width: 100%; display: flex; flex-direction: column; position: relative; /* 로딩 오버레이 기준점 */
+  }
   .calendar-header { font-size: 16px; font-weight: 700; margin-bottom: 14px; text-align: center; }
-  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 1fr; gap: 6px; flex: 1; }
   .calendar-weekday { font-size: 12px; color: #999; text-align: center; padding: 6px 0; }
   .calendar-day {
-    aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
     font-size: 15px; border-radius: 8px; color: #1F2A24;
   }
   .calendar-day.empty { visibility: hidden; }
@@ -128,6 +132,17 @@
   .calendar-day .count-badge {
     font-size: 10px; background: #2F6F5E; color: #fff; border-radius: 999px;
     padding: 1px 6px; margin-top: 3px; line-height: 1.3;
+  }
+
+  /* 달을 이동할 때 달력 위에만 뜨는 작은 로딩 표시 */
+  .calendar-loading-overlay {
+    position: absolute; inset: 0; background: rgba(255,255,255,0.88);
+    display: none; align-items: center; justify-content: center;
+    border-radius: 12px; z-index: 5;
+  }
+  .small-spinner {
+    width: 32px; height: 32px; border: 4px solid rgba(47, 111, 94, 0.15);
+    border-top-color: #2F6F5E; border-radius: 50%; animation: bigspin 0.8s linear infinite;
   }
 
   #versionTag { position: fixed; left: 8px; bottom: 8px; z-index: 400; font-size: 10px; color: #bbb; font-family: monospace; }
@@ -206,6 +221,9 @@
     <!-- ── 달력: 탭과 무관하게 항상 고정 표시 ── -->
     <div class="nursing-right">
       <div class="calendar-box">
+        <div id="calendarLoadingOverlay" class="calendar-loading-overlay">
+          <div class="small-spinner"></div>
+        </div>
         <div class="calendar-nav" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
           <button type="button" id="calPrevBtn" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:14px; cursor:pointer; -webkit-appearance:none; appearance:none;">‹</button>
           <div class="calendar-header" id="calendarHeader" style="margin-bottom:0;"></div>
@@ -374,6 +392,10 @@
       calMonth = month;
       document.getElementById('calendarHeader').textContent = year + '년 ' + month + '월';
 
+      // 달을 이동하는 동안, 달력 위에만 작은 로딩 표시를 띄웁니다.
+      var calLoadingEl = document.getElementById('calendarLoadingOverlay');
+      calLoadingEl.style.display = 'flex';
+
       var countsPromise = fetch(GAS_URL + '?action=nursingLogCounts&year=' + year + '&month=' + month)
         .then(function (res) { return res.json(); })
         .catch(function () { return {}; });
@@ -391,6 +413,7 @@
         });
 
         renderCalendar(year, month, holidaySet, counts);
+        calLoadingEl.style.display = 'none';
       });
     }
 
