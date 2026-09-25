@@ -592,23 +592,34 @@
         var detailBox = document.createElement('div');
         detailBox.style.cssText = 'background:#FAF9F5; padding:10px 14px; border-top:1px dashed #ddd; border-bottom:1px dashed #ddd;';
 
-        group.items.forEach(function (subItem, subIdx) {
-          var subRow = document.createElement('div');
-          subRow.style.cssText = 'display:flex; align-items:center; gap:10px; padding:6px 0; font-size:13px;';
-          subRow.innerHTML =
-            '<input type="checkbox" class="sub-check" data-row="' + subItem.rowIndex + '" data-qty="' + subItem.qty + '">' +
-            '<span style="flex:1;">등록분 ' + (subIdx + 1) + ' — 수량 ' + subItem.qty + '개' +
-            (subItem.company ? ' · ' + subItem.company : '') + '</span>' +
-            '<button type="button" class="dispose-btn" data-row="' + subItem.rowIndex + '" data-name="' + group.name + '" data-qty="' + subItem.qty + '">폐기</button>';
-          detailBox.appendChild(subRow);
+        // 등록 건(배치)이 몇 번으로 나뉘어 있었는지와 상관없이, 그룹 전체 수량만큼
+        // "낱개" 단위로 쪼개서 나열합니다. 각 낱개는 실제로는 어느 등록 건에서
+        // 왔는지(sourceRowIndex)를 내부적으로만 기억해뒀다가, 폐기 처리할 때
+        // 그 등록 건의 수량을 알맞게 차감하는 데 씁니다.
+        var units = [];
+        group.items.forEach(function (subItem) {
+          for (var k = 0; k < subItem.qty; k++) {
+            units.push({ sourceRowIndex: subItem.rowIndex });
+          }
         });
 
-        // 여러 개 체크했을 때만 나타나는 "선택 폐기(전량)" 버튼
+        var unitsGrid = document.createElement('div');
+        unitsGrid.style.cssText = 'display:flex; flex-wrap:wrap; gap:8px;';
+        units.forEach(function (unit, unitIdx) {
+          var unitLabel = document.createElement('label');
+          unitLabel.style.cssText = 'display:flex; align-items:center; gap:4px; font-size:13px; background:#fff; border:1px solid #eee; border-radius:8px; padding:4px 8px; cursor:pointer;';
+          unitLabel.innerHTML =
+            '<input type="checkbox" class="unit-check" data-source-row="' + unit.sourceRowIndex + '"> 낱개 ' + (unitIdx + 1);
+          unitsGrid.appendChild(unitLabel);
+        });
+        detailBox.appendChild(unitsGrid);
+
+        // 하나 이상 체크했을 때만 나타나는 "선택 삭제" 버튼
         var batchRow = document.createElement('div');
-        batchRow.style.cssText = 'margin-top:6px; padding-top:6px; border-top:1px solid #eee; text-align:right;';
+        batchRow.style.cssText = 'margin-top:10px; padding-top:8px; border-top:1px solid #eee; text-align:right;';
         var batchBtn = document.createElement('button');
         batchBtn.type = 'button';
-        batchBtn.textContent = '선택한 항목 전량 폐기';
+        batchBtn.textContent = '선택 삭제';
         batchBtn.className = 'dispose-btn';
         batchBtn.style.display = 'none';
         batchRow.appendChild(batchBtn);
@@ -616,21 +627,29 @@
 
         detailTd.appendChild(detailBox);
 
-        // 체크박스 상태에 따라 "선택 폐기" 버튼을 보였다 숨겼다 합니다.
-        detailBox.querySelectorAll('.sub-check').forEach(function (cb) {
+        // 체크박스 상태에 따라 "선택 삭제" 버튼을 보였다 숨겼다 하고, 몇 개
+        // 선택했는지도 버튼 글자에 같이 보여줍니다.
+        detailBox.querySelectorAll('.unit-check').forEach(function (cb) {
           cb.addEventListener('change', function () {
-            var anyChecked = detailBox.querySelectorAll('.sub-check:checked').length > 0;
-            batchBtn.style.display = anyChecked ? 'inline-block' : 'none';
+            var checkedCount = detailBox.querySelectorAll('.unit-check:checked').length;
+            batchBtn.style.display = checkedCount > 0 ? 'inline-block' : 'none';
+            batchBtn.textContent = '선택 삭제 (' + checkedCount + ')';
           });
         });
 
         batchBtn.addEventListener('click', function () {
-          var checked = detailBox.querySelectorAll('.sub-check:checked');
+          var checked = detailBox.querySelectorAll('.unit-check:checked');
           if (checked.length === 0) return;
-          if (!confirm(checked.length + '개 항목을 전량 폐기할까요?')) return;
+          if (!confirm(checked.length + '개 항목을 삭제할까요?')) return;
 
-          var payloadItems = Array.from(checked).map(function (cb) {
-            return { rowIndex: cb.getAttribute('data-row'), disposeQty: cb.getAttribute('data-qty') };
+          // 체크된 낱개들을 "어느 등록 건(rowIndex)에서 몇 개씩 뺄지"로 다시 모읍니다.
+          var qtyBySourceRow = {};
+          checked.forEach(function (cb) {
+            var sourceRow = cb.getAttribute('data-source-row');
+            qtyBySourceRow[sourceRow] = (qtyBySourceRow[sourceRow] || 0) + 1;
+          });
+          var payloadItems = Object.keys(qtyBySourceRow).map(function (rowIndex) {
+            return { rowIndex: rowIndex, disposeQty: qtyBySourceRow[rowIndex] };
           });
 
           batchBtn.disabled = true;
@@ -656,50 +675,6 @@
               batchBtn.textContent = '선택한 항목 전량 폐기';
               alert('처리 중 오류가 발생했습니다.');
             });
-        });
-
-        // 개별 "폐기" 버튼: 수량을 물어보고 그만큼만 차감합니다.
-        detailBox.querySelectorAll('.dispose-btn[data-row]').forEach(function (btn) {
-          if (!btn.getAttribute('data-name')) return; // 위에서 만든 배치 버튼은 건너뜁니다.
-          btn.addEventListener('click', function (e) {
-            e.stopPropagation();
-            var rowIndex = btn.getAttribute('data-row');
-            var name = btn.getAttribute('data-name');
-            var maxQty = parseInt(btn.getAttribute('data-qty'), 10);
-
-            var input = prompt(name + ' — 폐기할 수량을 입력하세요 (남은 수량: ' + maxQty + ')', maxQty);
-            if (input === null) return;
-
-            var disposeQty = parseInt(input, 10);
-            if (!disposeQty || disposeQty <= 0 || disposeQty > maxQty) {
-              alert('올바른 수량을 입력해 주세요 (1 ~ ' + maxQty + ').');
-              return;
-            }
-
-            btn.disabled = true;
-            btn.textContent = '처리 중...';
-
-            fetch(GAS_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({ type: 'disposeMed', rowIndex: rowIndex, disposeQty: disposeQty })
-            })
-              .then(function (res) { return res.json(); })
-              .then(function (data) {
-                if (data && data.ok) {
-                  reloadMedList();
-                } else {
-                  btn.disabled = false;
-                  btn.textContent = '폐기';
-                  alert('폐기 실패: ' + (data && data.error ? data.error : '알 수 없는 오류'));
-                }
-              })
-              .catch(function () {
-                btn.disabled = false;
-                btn.textContent = '폐기';
-                alert('처리 중 오류가 발생했습니다.');
-              });
-          });
         });
 
         // 그룹 줄을 클릭하면 펼침/접힘 토글
