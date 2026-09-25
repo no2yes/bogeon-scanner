@@ -404,13 +404,23 @@
 
       lines.push('○ 총 이용 아동 수: ' + childEntries.length + '명');
 
-      lines.push('○ 세부 내역:');
-      if (data.items.length === 0) {
+      // 증상 문장이 똑같은 것끼리 묶어서, 몇 건씩 있었는지 셉니다.
+      var symptomCounts = {};
+      data.items.forEach(function (item) {
+        var key = item.symptom || '(내용 없음)';
+        symptomCounts[key] = (symptomCounts[key] || 0) + 1;
+      });
+      var symptomEntries = Object.keys(symptomCounts).map(function (s) {
+        return { symptom: s, count: symptomCounts[s] };
+      });
+      symptomEntries.sort(function (a, b) { return b.count - a.count; });
+
+      lines.push('○ 증상별 방문자수:');
+      if (symptomEntries.length === 0) {
         lines.push('  - 없음');
       } else {
-        data.items.forEach(function (item) {
-          var shortTime = item.visitDateTime.replace(/^\d{4}\./, '');
-          lines.push('  ' + shortTime + ' - ' + item.childName + ' - ' + (item.symptom || '(내용 없음)'));
+        symptomEntries.forEach(function (e) {
+          lines.push('  - ' + e.symptom + ' ' + e.count + '건');
         });
       }
 
