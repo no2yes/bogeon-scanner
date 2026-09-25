@@ -97,6 +97,27 @@
   #feedbackLoadingOverlay .loading-text { margin-top: 20px; font-size: 19px; font-weight: 700; color: #1F2A24; }
   #feedbackLoadingOverlay .loading-sub { margin-top: 8px; font-size: 14px; color: #888; }
 
+
+  /* 보건일지 탭: 목록(왼쪽) + 이번달 달력(오른쪽). 화면이 좁으면 세로로 쌓입니다. */
+  .nursing-layout { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+  .nursing-left { flex: 1 1 260px; min-width: 260px; }
+  .nursing-right { flex: 0 1 300px; min-width: 260px; }
+
+  .calendar-box { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; box-sizing: border-box; }
+  .calendar-header { font-size: 14px; font-weight: 700; margin-bottom: 12px; text-align: center; }
+  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .calendar-weekday { font-size: 11px; color: #999; text-align: center; padding: 4px 0; }
+  .calendar-day {
+    aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 13px; border-radius: 8px; color: #1F2A24;
+  }
+  .calendar-day.empty { visibility: hidden; }
+  .calendar-day.red { color: #DC2626; font-weight: 700; }
+  .calendar-day .count-badge {
+    font-size: 9px; background: #2F6F5E; color: #fff; border-radius: 999px;
+    padding: 1px 5px; margin-top: 2px; line-height: 1.3;
+  }
+
   #versionTag { position: fixed; left: 8px; bottom: 8px; z-index: 400; font-size: 10px; color: #bbb; font-family: monospace; }
 </style>
 </head>
@@ -115,11 +136,22 @@
 
   <!-- ── 보건일지 탭 ── -->
   <div id="tabNursing">
-    <a class="scan-btn" href="nursing-log.html">보건일지 작성하기</a>
+    <div class="nursing-layout">
+      <div class="nursing-left">
+        <a class="scan-btn" href="nursing-log.html">보건일지 작성하기</a>
 
-    <h2>최근 보건일지</h2>
-    <div id="nursingList"></div>
-    <div id="nursingEmpty">불러오는 중...</div>
+        <h2>최근 보건일지</h2>
+        <div id="nursingList"></div>
+        <div id="nursingEmpty">불러오는 중...</div>
+      </div>
+
+      <div class="nursing-right">
+        <div class="calendar-box">
+          <div class="calendar-header" id="calendarHeader"></div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ── 약품관리 탭 ── -->
@@ -248,6 +280,85 @@
       .catch(function () {
         document.getElementById('nursingEmpty').textContent = '불러오지 못했습니다.';
       });
+
+    // ── 이번 달 달력 ──────────────────────────────
+    var calYear = now.getFullYear();
+    var calMonth = now.getMonth() + 1; // 1~12
+
+    document.getElementById('calendarHeader').textContent = calYear + '년 ' + calMonth + '월';
+
+    // 공휴일·대체공휴일은 Nager.Date(무료, 인증키 불필요, 한국 포함)에서 가져옵니다.
+    var holidayPromise = fetch('https://date.nager.at/api/v3/PublicHolidays/' + calYear + '/KR')
+      .then(function (res) { return res.json(); })
+      .catch(function () { return []; }); // 실패해도 달력 자체는 그려야 하니 빈 배열로 대체합니다.
+
+    var countsPromise = fetch(GAS_URL + '?action=nursingLogCounts&year=' + calYear + '&month=' + calMonth)
+      .then(function (res) { return res.json(); })
+      .catch(function () { return {}; });
+
+    Promise.all([holidayPromise, countsPromise]).then(function (results) {
+      var holidays = results[0];
+      var counts = results[1];
+
+      // 이번 달의 공휴일 날짜(일 숫자)만 골라서 Set으로 만듭니다.
+      var holidaySet = new Set();
+      holidays.forEach(function (h) {
+        // h.date는 "2026-09-25" 형태입니다.
+        var parts = h.date.split('-');
+        if (parseInt(parts[0], 10) === calYear && parseInt(parts[1], 10) === calMonth) {
+          holidaySet.add(parseInt(parts[2], 10));
+        }
+      });
+
+      renderCalendar(calYear, calMonth, holidaySet, counts);
+    });
+
+    function renderCalendar(year, month, holidaySet, counts) {
+      var grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      var weekdayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+      weekdayLabels.forEach(function (label) {
+        var el = document.createElement('div');
+        el.className = 'calendar-weekday';
+        el.textContent = label;
+        grid.appendChild(el);
+      });
+
+      var firstDay = new Date(year, month - 1, 1);
+      var startWeekday = firstDay.getDay(); // 1일이 무슨 요일인지 (0=일요일)
+      var daysInMonth = new Date(year, month, 0).getDate();
+
+      // 1일 앞에, 요일 맞추기용 빈 칸을 채웁니다.
+      for (var i = 0; i < startWeekday; i++) {
+        var emptyEl = document.createElement('div');
+        emptyEl.className = 'calendar-day empty';
+        grid.appendChild(emptyEl);
+      }
+
+      for (var day = 1; day <= daysInMonth; day++) {
+        var weekday = new Date(year, month - 1, day).getDay(); // 0=일, 6=토
+        var isWeekend = weekday === 0 || weekday === 6;
+        var isHoliday = holidaySet.has(day);
+
+        var dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day' + ((isWeekend || isHoliday) ? ' red' : '');
+
+        var dayNumEl = document.createElement('div');
+        dayNumEl.textContent = day;
+        dayEl.appendChild(dayNumEl);
+
+        var count = counts[day];
+        if (count) {
+          var badge = document.createElement('div');
+          badge.className = 'count-badge';
+          badge.textContent = count + '건';
+          dayEl.appendChild(badge);
+        }
+
+        grid.appendChild(dayEl);
+      }
+    }
 
     // ── 약품관리 통계·목록 불러오기 ──────────────────────────────
     var statsPromise = fetch(GAS_URL + '?action=stats')
