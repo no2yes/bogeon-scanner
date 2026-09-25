@@ -371,7 +371,69 @@
     if (window.location.hash === '#meds') {
       showTab('meds');
     }
+    // ── 보건일지 목록 불러오기 ──────────────────────────────
+    var nursingListMinHeight = 0; // 꽉 찬 페이지 기준 높이를 여기 기억해둡니다.
 
+    function renderNursingList(items) {
+      var listEl = document.getElementById('nursingList');
+      var emptyEl = document.getElementById('nursingEmpty');
+      listEl.innerHTML = '';
+
+      if (!items || items.length === 0) {
+        emptyEl.textContent = '등록된 보건일지가 없습니다.';
+        listEl.style.minHeight = nursingListMinHeight + 'px';
+        return;
+      }
+      emptyEl.style.display = 'none';
+
+      var badgeMap = { 'AI': '✨', '수동': '⚠️', '수정됨': '✏️' };
+
+      function getEulReulJosa(name) {
+        var lastChar = name.charAt(name.length - 1);
+        var code = lastChar.charCodeAt(0);
+        if (code < 0xAC00 || code > 0xD7A3) return '을';
+        return (code - 0xAC00) % 28 === 0 ? '를' : '을';
+      }
+
+      items.forEach(function (item) {
+        var row = document.createElement('div');
+        row.className = 'nursing-item';
+
+        var badge = badgeMap[item.aiUsed] || '';
+        var josa = getEulReulJosa(item.childName);
+
+        row.innerHTML =
+          '<div class="nursing-top">' +
+          '<span class="nursing-child">' + item.childName + '</span>' +
+          '<span class="nursing-caretext">' + josa + ' 정성껏 돌봐주었어요</span>' +
+          '<span class="nursing-badge">' + badge + '</span>' +
+          '<span class="nursing-time">' + item.visitDateTime + '</span>' +
+          '</div>' +
+          '<div class="nursing-report">' +
+          '<div style="font-weight:700; margin-bottom:4px;">정리된 보고서</div>' +
+          '<div class="nursing-report-text"></div>' +
+          '<div style="font-weight:700; margin:10px 0 4px; color:#888;">원문(작성자 입력, AI 정리의 근거)</div>' +
+          '<div class="nursing-rawtext"></div>' +
+          '</div>';
+
+        row.querySelector('.nursing-report-text').textContent = item.report;
+        row.querySelector('.nursing-rawtext').textContent = item.rawText || '(원문 없음)';
+
+        row.addEventListener('click', function () {
+          var reportEl = row.querySelector('.nursing-report');
+          reportEl.style.display = reportEl.style.display === 'block' ? 'none' : 'block';
+        });
+
+        listEl.appendChild(row);
+      });
+
+      if (items.length >= nursingPageSize) {
+        nursingListMinHeight = listEl.scrollHeight;
+      }
+      if (nursingListMinHeight > 0) {
+        listEl.style.minHeight = nursingListMinHeight + 'px';
+      }
+    }
     var nursingCurrentPage = 1;
     var nursingPageSize = 8;
 
