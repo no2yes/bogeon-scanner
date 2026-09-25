@@ -95,7 +95,7 @@
     <textarea id="rawText" placeholder="있었던 일을 자유롭게 적어주세요" tabindex="2"></textarea>
 
     <div class="btn-row">
-      <button type="button" id="outputBtn" tabindex="4">저장</button>
+      <button type="button" id="outputBtn" tabindex="4">AI정리</button>
       <button type="button" id="copyBtn" tabindex="5" disabled>📋 아래 내용 전체 복사</button>
     </div>
   </div>
@@ -207,11 +207,13 @@
         return;
       }
 
-      // 이 단계는 AI를 전혀 거치지 않고, 화면에 보이는 텍스트를 그대로
-      // 저장만 하는 거라서 로딩 문구도 다르게(AI 언급 없이) 보여줍니다.
-      loadingTextEl.textContent = '저장하고 있어요...';
-      loadingOverlay.style.display = 'flex';
+      // 이 단계는 곧바로 홈 화면으로 넘어가고, 거기서 다시 전체화면 로딩이
+      // 뜰 예정이라, 여기서는 전체화면 로딩을 따로 띄우지 않습니다(로딩이
+      // 두 번 연속으로 도는 것처럼 보이지 않게 하기 위해서입니다). 대신
+      // 버튼 텍스트만 바꿔서 "지금 처리 중"이라는 걸 알려줍니다.
+      var originalText = outputBtn.textContent;
       outputBtn.disabled = true;
+      outputBtn.textContent = '저장 중...';
 
       fetch(GAS_URL, {
         method: 'POST',
@@ -224,27 +226,19 @@
       })
         .then(function (res) { return res.json(); })
         .then(function (data) {
-          loadingOverlay.style.display = 'none';
-
           if (data && data.ok) {
-            var badge = document.getElementById('aiBadge');
-            badge.textContent = '✏️';
-            badge.title = '직접 수정한 내용이에요';
-
-            outputBtn.disabled = true;
-            outputBtn.textContent = '저장됨 ✓';
-            setTimeout(function () {
-              outputBtn.disabled = false;
-              outputBtn.textContent = '수정 내용 저장';
-            }, 1200);
+            // 성공하면 바로 홈 화면으로 이동합니다. 거기서 뜨는 전체화면
+            // 로딩이 이 버튼 로딩을 자연스럽게 이어받습니다.
+            window.location.href = 'home.html';
           } else {
             outputBtn.disabled = false;
+            outputBtn.textContent = originalText;
             alert('저장 실패: ' + (data && data.error ? data.error : '알 수 없는 오류'));
           }
         })
         .catch(function () {
-          loadingOverlay.style.display = 'none';
           outputBtn.disabled = false;
+          outputBtn.textContent = originalText;
           alert('전송 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
         });
     }
