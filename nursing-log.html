@@ -28,11 +28,12 @@
     font-size: 13px; color: #2F6F5E; line-height: 1.5; margin-bottom: 12px;
   }
 
+  .btn-row { display: flex; gap: 10px; margin-top: 4px; }
   #outputBtn {
-    display: block; width: 100%; box-sizing: border-box; padding: 14px;
+    flex: 2; box-sizing: border-box; padding: 14px;
     border-radius: 10px; border: none; background: #2F6F5E; color: #fff;
     font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit;
-    -webkit-appearance: none; appearance: none; margin-top: 4px;
+    -webkit-appearance: none; appearance: none;
   }
 
   #resultBox { display: none; }
@@ -43,11 +44,12 @@
     font-family: inherit; color: #1F2A24; resize: vertical;
   }
   #copyBtn {
-    display: block; width: 100%; box-sizing: border-box; padding: 12px;
+    flex: 1; box-sizing: border-box; padding: 14px;
     border-radius: 10px; border: 1px solid #2F6F5E; background: #fff; color: #2F6F5E;
     font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
-    -webkit-appearance: none; appearance: none; margin-top: 10px;
+    -webkit-appearance: none; appearance: none;
   }
+  #copyBtn:disabled { border-color: #ccc; color: #aaa; cursor: not-allowed; }
 
   .big-spinner {
     width: 68px; height: 68px; border: 6px solid rgba(47, 111, 94, 0.12);
@@ -92,13 +94,15 @@
     </div>
     <textarea id="rawText" placeholder="있었던 일을 자유롭게 적어주세요" tabindex="2"></textarea>
 
-    <button type="button" id="outputBtn" tabindex="4">출력</button>
+    <div class="btn-row">
+      <button type="button" id="outputBtn" tabindex="4">저장</button>
+      <button type="button" id="copyBtn" tabindex="5" disabled>📋 요약보고서 복사</button>
+    </div>
   </div>
 
   <div class="field-box" id="resultBox">
-    <label>정리된 보고서</label>
-    <textarea id="resultText" readonly></textarea>
-    <button type="button" id="copyBtn">📋 복사</button>
+    <label>정리된 보고서 <span id="aiBadge"></span></label>
+    <textarea id="resultText"></textarea>
   </div>
 
   <div id="loadingOverlay">
@@ -127,10 +131,24 @@
     var resultText = document.getElementById('resultText');
     var loadingOverlay = document.getElementById('loadingOverlay');
 
+    // 아직 저장 전이면 null, 한 번 저장하고 나면 그 줄의 시트 행 번호가 들어갑니다.
+    // 이 값이 있으면 "수정 내용 저장"(업데이트) 모드로 동작합니다.
+    var savedRowIndex = null;
+
     // 페이지를 열면 바로 대상아동 이름부터 입력할 수 있게 포커스를 줍니다.
     childNameInput.focus();
 
     outputBtn.addEventListener('click', function () {
+      // 아직 저장 전이면(=처음 누르는 거면) 새로 만들고, 이미 저장된 뒤라면
+      // (=savedRowIndex가 있으면) 고친 내용으로 그 줄만 업데이트합니다.
+      if (savedRowIndex === null) {
+        createNursingLog();
+      } else {
+        updateNursingLog();
+      }
+    });
+
+    function createNursingLog() {
       if (!childNameInput.value.trim()) {
         alert('대상 아동 이름을 입력해 주세요.');
         return;
@@ -163,6 +181,17 @@
             resultText.value = data.report;
             resultBox.style.display = 'block';
             resultBox.scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('copyBtn').disabled = false;
+
+            // AI가 정상적으로 정리했으면 ✨, 실패해서 대체 문구가 들어간 거면
+            // ⚠️로 표시해서, 한 번 더 검토가 필요한지 바로 알 수 있게 합니다.
+            var badge = document.getElementById('aiBadge');
+            badge.textContent = data.aiUsed ? '✨' : '⚠️';
+            badge.title = data.aiUsed ? 'AI가 정상적으로 정리했어요' : 'AI 정리에 실패해 확인 문구가 들어갔어요 — 꼭 검토해 주세요';
+
+            // 저장이 끝났으니, 이제부터는 "수정 내용 저장" 모드로 전환합니다.
+            savedRowIndex = data.rowIndex;
+            outputBtn.textContent = '수정 내용 저장';
           } else {
             alert('정리 실패: ' + (data && data.error ? data.error : '알 수 없는 오류'));
           }
@@ -172,7 +201,49 @@
           outputBtn.disabled = false;
           alert('전송 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
         });
-    });
+    }
+
+    function updateNursingLog() {
+      if (!resultText.value.trim()) {
+        alert('저장할 내용이 없습니다.');
+        return;
+      }
+
+      loadingOverlay.style.display = 'flex';
+      outputBtn.disabled = true;
+
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          type: 'updateNursingLog',
+          rowIndex: savedRowIndex,
+          report: resultText.value.trim()
+        })
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          loadingOverlay.style.display = 'none';
+          outputBtn.disabled = false;
+
+          if (data && data.ok) {
+            var badge = document.getElementById('aiBadge');
+            badge.textContent = '✏️';
+            badge.title = '직접 수정한 내용이에요';
+
+            var original = outputBtn.textContent;
+            outputBtn.textContent = '저장됨 ✓';
+            setTimeout(function () { outputBtn.textContent = original; }, 1200);
+          } else {
+            alert('저장 실패: ' + (data && data.error ? data.error : '알 수 없는 오류'));
+          }
+        })
+        .catch(function () {
+          loadingOverlay.style.display = 'none';
+          outputBtn.disabled = false;
+          alert('전송 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+        });
+    }
 
     document.getElementById('copyBtn').addEventListener('click', function () {
       navigator.clipboard.writeText(resultText.value).then(function () {
