@@ -52,13 +52,17 @@
 
   /* ── 월별 보고서(그래프 대시보드) ── */
   #monthlyResultBox { display: none; }
-  .month-stat-cards { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-  .month-stat-card { flex: 1; min-width: 100px; box-sizing: border-box; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 14px; text-align: center; }
-  .month-stat-card .num { font-size: 24px; font-weight: 800; color: #2F6F5E; }
-  .month-stat-card .label { font-size: 12px; color: #888; margin-top: 4px; }
+  .month-stat-cards { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .month-stat-card { flex: 1; min-width: 100px; box-sizing: border-box; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 10px; text-align: center; }
+  .month-stat-card .num { font-size: 22px; font-weight: 800; color: #2F6F5E; }
+  .month-stat-card .label { font-size: 11px; color: #888; margin-top: 2px; }
 
-  .chart-box { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
-  .chart-box canvas { max-height: 260px; }
+  .chart-box { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+  .chart-box h2 { font-size: 13px; margin: 0 0 6px; }
+  /* 캔버스를 고정 높이 상자 안에 넣고, Chart.js에는 maintainAspectRatio:false를
+     줘서 이 높이에 딱 맞춰 그리게 합니다 — 그래프 3개 * 이 높이가 예측 가능해져서,
+     전체 보고서가 인쇄 시 한 페이지 안에 들어오도록 계산할 수 있습니다. */
+  .chart-canvas-wrap { height: 150px; position: relative; }
 
   .text-summary-box { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 16px; }
 
@@ -76,6 +80,7 @@
 
   /* 인쇄할 때는 버튼·입력창·탭 같은 조작용 요소를 다 숨기고, 결과 내용만 보여줍니다. */
   @media print {
+    @page { margin: 10mm; }
     a.back-link, #reportTypeTabs, .field-box, .copy-btn, #loadingOverlay {
       display: none !important;
     }
@@ -129,17 +134,17 @@
 
     <div class="chart-box">
       <h2>📈 일별 방문 추이</h2>
-      <canvas id="dailyChart"></canvas>
+      <div class="chart-canvas-wrap"><canvas id="dailyChart"></canvas></div>
     </div>
 
     <div class="chart-box">
       <h2>🏆 아동별 방문 횟수 TOP 5</h2>
-      <canvas id="childChart"></canvas>
+      <div class="chart-canvas-wrap"><canvas id="childChart"></canvas></div>
     </div>
 
     <div class="chart-box">
       <h2>🩹 주요 증상 TOP 5</h2>
-      <canvas id="symptomChart"></canvas>
+      <div class="chart-canvas-wrap"><canvas id="symptomChart"></canvas></div>
     </div>
 
     <button type="button" id="printMonthlyBtn" class="copy-btn" style="border-color:#666; color:#666;">🖨️ 이 대시보드 인쇄</button>
@@ -311,6 +316,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
@@ -337,6 +343,7 @@
         options: {
           indexAxis: 'y',
           responsive: true,
+          maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
@@ -349,7 +356,7 @@
         type: 'bar',
         data: { labels: [], datasets: [{ label: '건수', data: [], backgroundColor: '#DC2626' }] },
         options: {
-          indexAxis: 'y', responsive: true,
+          indexAxis: 'y', responsive: true, maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
