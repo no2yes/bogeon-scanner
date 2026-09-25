@@ -141,15 +141,15 @@
 
   <h1>보건실 관리시스템</h1>
 
-  <div id="tabBar">
-    <button type="button" class="tab-btn active" id="tabBtnNursing">보건일지</button>
-    <button type="button" class="tab-btn" id="tabBtnMeds">약품관리</button>
-  </div>
+  <div class="nursing-layout">
+    <div class="nursing-left">
+      <div id="tabBar">
+        <button type="button" class="tab-btn active" id="tabBtnNursing">보건일지</button>
+        <button type="button" class="tab-btn" id="tabBtnMeds">약품관리</button>
+      </div>
 
-  <!-- ── 보건일지 탭 ── -->
-  <div id="tabNursing">
-    <div class="nursing-layout">
-      <div class="nursing-left">
+      <!-- ── 보건일지 탭 내용 ── -->
+      <div id="tabNursing">
         <div class="nursing-list-header">
           <h2 style="margin:0;">최근 보건일지</h2>
           <a class="write-log-btn" href="nursing-log.html">📝 새 일지 작성</a>
@@ -164,56 +164,58 @@
         </div>
       </div>
 
-      <div class="nursing-right">
-        <div class="calendar-box">
-          <div class="calendar-nav" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-            <button type="button" id="calPrevBtn" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:14px; cursor:pointer; -webkit-appearance:none; appearance:none;">‹</button>
-            <div class="calendar-header" id="calendarHeader" style="margin-bottom:0;"></div>
-            <button type="button" id="calNextBtn" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:14px; cursor:pointer; -webkit-appearance:none; appearance:none;">›</button>
+      <!-- ── 약품관리 탭 내용 ── -->
+      <div id="tabMeds" style="display:none;">
+        <div class="stat-cards">
+          <div class="stat-card">
+            <div class="stat-label">전체 등록 약품</div>
+            <div class="stat-value" id="totalCount">–</div>
           </div>
-          <div class="calendar-grid" id="calendarGrid"></div>
+          <div class="stat-card">
+            <div class="stat-label">유통기한 임박 (30일 이내)</div>
+            <div class="stat-value warn" id="expiringCount">–</div>
+          </div>
+        </div>
+
+        <button type="button" id="scanBtn" class="scan-btn" style="border: none; cursor: pointer;">약품 바코드 스캔하기</button>
+
+        <div id="qrBox">
+          <div style="font-size: 13px; color: #666; margin-bottom: 12px;">휴대폰 카메라로 아래 QR코드를 스캔하세요</div>
+          <img id="qrImg" width="200" height="200" alt="스캔 페이지 QR코드">
+        </div>
+
+        <h2>유통기한 임박 약품</h2>
+        <table id="table" style="display:none;">
+          <thead><tr><th>약품명</th><th>유통기한</th><th>상태</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div id="empty">불러오는 중...</div>
+
+        <div id="homeQrBox">
+          <button type="button" id="qrToggleBtn">
+            <span>스마트폰으로 이 화면 바로 열기</span>
+            <span id="qrToggleArrow">▼</span>
+          </button>
+          <div id="qrContent">
+            <img id="homeQrImg" width="160" height="160" alt="홈 화면 QR코드">
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ── 약품관리 탭 ── -->
-  <div id="tabMeds" style="display:none;">
-    <div class="stat-cards">
-      <div class="stat-card">
-        <div class="stat-label">전체 등록 약품</div>
-        <div class="stat-value" id="totalCount">–</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">유통기한 임박 (30일 이내)</div>
-        <div class="stat-value warn" id="expiringCount">–</div>
-      </div>
-    </div>
-
-    <button type="button" id="scanBtn" class="scan-btn" style="border: none; cursor: pointer;">약품 바코드 스캔하기</button>
-
-    <div id="qrBox">
-      <div style="font-size: 13px; color: #666; margin-bottom: 12px;">휴대폰 카메라로 아래 QR코드를 스캔하세요</div>
-      <img id="qrImg" width="200" height="200" alt="스캔 페이지 QR코드">
-    </div>
-
-    <h2>유통기한 임박 약품</h2>
-    <table id="table" style="display:none;">
-      <thead><tr><th>약품명</th><th>유통기한</th><th>상태</th></tr></thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    <div id="empty">불러오는 중...</div>
-
-    <div id="homeQrBox">
-      <button type="button" id="qrToggleBtn">
-        <span>스마트폰으로 이 화면 바로 열기</span>
-        <span id="qrToggleArrow">▼</span>
-      </button>
-      <div id="qrContent">
-        <img id="homeQrImg" width="160" height="160" alt="홈 화면 QR코드">
+    <!-- ── 달력: 탭과 무관하게 항상 고정 표시 ── -->
+    <div class="nursing-right">
+      <div class="calendar-box">
+        <div class="calendar-nav" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+          <button type="button" id="calPrevBtn" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:14px; cursor:pointer; -webkit-appearance:none; appearance:none;">‹</button>
+          <div class="calendar-header" id="calendarHeader" style="margin-bottom:0;"></div>
+          <button type="button" id="calNextBtn" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:14px; cursor:pointer; -webkit-appearance:none; appearance:none;">›</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
       </div>
     </div>
   </div>
+
 
   <button type="button" id="feedbackFab">💬 피드백</button>
 
