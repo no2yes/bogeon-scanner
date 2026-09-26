@@ -916,13 +916,14 @@
       });
     }
 
-    var scannerUrl = window.location.href.replace('home.html', 'index.html');
+    // 지금 페이지 주소에서 파일명만 "scan.html"로 바꿔서 스캐너 주소를 만듭니다.
+    var scannerUrl = new URL('scan.html', window.location.href).href;
     var scanBtn = document.getElementById('scanBtn');
     var qrBox = document.getElementById('qrBox');
 
     scanBtn.addEventListener('click', function () {
       if (isMobileDevice) {
-        window.location.href = 'index.html';
+        window.location.href = 'scan.html';
       } else {
         var isShown = qrBox.style.display === 'block';
         qrBox.style.display = isShown ? 'none' : 'block';
