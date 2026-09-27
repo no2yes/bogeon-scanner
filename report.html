@@ -259,7 +259,7 @@
       var range = getWeekRange(weekDateVal);
       var periodLabel = formatKoreanDate(range.startObj) + ' ~ ' + formatKoreanDate(range.endObj);
 
-      fetch(GAS_URL + '?action=periodReport&start=' + range.start + '&end=' + range.end)
+      fetch(GAS_URL + '?action=periodReport&start=' + range.start + '&end=' + range.end + '&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
         .then(function (res) { return res.json(); })
         .then(function (data) {
           finishLoading();
@@ -281,7 +281,7 @@
       var periodLabel = range.year + '년 ' + range.month + '월';
       document.getElementById('pageTitle').textContent = range.year + '년' + pad2(range.month) + '월 보건활동 보고서';
 
-      fetch(GAS_URL + '?action=periodReport&start=' + range.start + '&end=' + range.end)
+      fetch(GAS_URL + '?action=periodReport&start=' + range.start + '&end=' + range.end + '&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
         .then(function (res) { return res.json(); })
         .then(function (data) {
           finishLoading();
@@ -383,7 +383,7 @@
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ type: 'symptomTop5', symptoms: symptoms })
+        body: JSON.stringify({ type: 'symptomTop5', token: localStorage.getItem('authToken'), symptoms: symptoms })
       })
         .then(function (res) { return res.json(); })
         .then(function (result) {
