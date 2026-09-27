@@ -156,7 +156,7 @@ function renderOperatorList(operators) {
     item.className = 'op-item';
 
     var isAdmin = op.role === '관리자';
-    var allowedSet = new Set(op.features || []);
+    var allowedSet = new Set(op.allowedFeatures || []);
 
     var topHtml =
       '<div class="op-top">' +
@@ -209,7 +209,7 @@ function updateOperatorFeatures(email, features, changedCb, changedLabel) {
   fetch(GAS_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ type: 'updateOperatorPermissions', token: myToken, email: email, features: features })
+    body: JSON.stringify({ type: 'updateOperatorPermissions', token: myToken, email: email, allowedFeatures: features })
   })
   .then(function (res) { return res.json(); })
   .then(function (data) {
