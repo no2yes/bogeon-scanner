@@ -110,7 +110,7 @@
     }
 
     function loadBackupList() {
-      fetch(GAS_URL + '?action=listBackups')
+      fetch(GAS_URL + '?action=listBackups&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
         .then(function (res) { return res.json(); })
         .then(function (list) { renderBackupList(list); })
         .catch(function () {
@@ -170,7 +170,7 @@
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ type: 'restoreBackup', backupFileId: backup.id })
+        body: JSON.stringify({ type: 'restoreBackup', token: localStorage.getItem('authToken'), backupFileId: backup.id })
       })
         .then(function (res) { return res.json(); })
         .then(function (data) {
@@ -194,7 +194,7 @@
       loadingText.textContent = '백업하고 있어요...';
       loadingOverlay.style.display = 'flex';
 
-      fetch(GAS_URL + '?action=runBackupNow')
+      fetch(GAS_URL + '?action=runBackupNow&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
         .then(function (res) { return res.json(); })
         .then(function (data) {
           loadingOverlay.style.display = 'none';
