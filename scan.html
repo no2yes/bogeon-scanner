@@ -128,12 +128,17 @@
   <button id="restart">다시 스캔</button>
 
   <script>
+    // 로그인 안 된 상태로 주소를 직접 알고 들어오는 것을 막습니다.
+    (function checkAuth(){
+      if (!localStorage.getItem('authToken')) { location.href = 'index.html'; }
+    })();
+
     // ▼▼ 실제 배포된 Apps Script 웹 앱 URL ▼▼
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
 
     // "홈으로" 링크는 이제 Apps Script 주소가 아니라, 같은 저장소 안의
     // home.html(경고 리본 없는 새 홈 화면)로 연결합니다.
-    document.getElementById('homeLink').href = 'index.html#meds';
+    document.getElementById('homeLink').href = 'home.html#meds';
 
     var statusEl = document.getElementById('status');
     var formEl = document.getElementById('form');

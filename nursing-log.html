@@ -67,7 +67,12 @@
 </style>
 </head>
 <body>
-  <a class="back-link" href="index.html">
+  <script>
+  (function checkAuth(){
+    if (!localStorage.getItem('authToken')) { location.href = 'index.html'; }
+  })();
+  </script>
+  <a class="back-link" href="home.html">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
     홈으로
   </a>
@@ -85,7 +90,7 @@
       </div>
       <div>
         <label for="author">작성자</label>
-        <input type="text" id="author" value="동영" tabindex="3">
+        <input type="text" id="author" tabindex="3">
       </div>
     </div>
 
@@ -258,10 +263,13 @@
       }
     });
 
+    // 로그인한 사람 이름을 작성자 칸에 자동으로 채워둡니다.
+    document.getElementById('author').value = localStorage.getItem('authName') || '';
+
     // "닫기"는 저장을 거치지 않고 그냥 홈으로 돌아갑니다 — AI정리 시점에
     // 이미 저장이 끝난 상태라, 고친 내용을 저장하고 싶지 않을 때 씁니다.
     document.getElementById('closeBtn').addEventListener('click', function () {
-      window.location.href = 'index.html';
+      window.location.href = 'home.html';
     });
     document.getElementById('copyBtn').addEventListener('click', function () {
       navigator.clipboard.writeText(resultText.value).then(function () {
