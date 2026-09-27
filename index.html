@@ -180,17 +180,18 @@ function verifyCode() {
   })
   .then(res => res.json())
   .then(data => {
-    setLoading(btn, false, '확인');
     if (data.ok) {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('authEmail', data.email);
       localStorage.setItem('authName', data.name);
       localStorage.setItem('authRole', data.role);
       localStorage.setItem('authFeatures', JSON.stringify(data.allowedFeatures || []));
-      msgEl.textContent = '로그인 성공! 이동중...';
-      msgEl.className = 'msg ok';
-      setTimeout(() => { location.href = 'home.html'; }, 400);
+      // 성공 후에는 버튼을 원래 모양으로 되돌리지 않고(깜빡임 방지),
+      // 스피너를 유지한 채로 곧바로 이동합니다.
+      btn.innerHTML = '<span class="spinner"></span>이동중...';
+      location.href = 'home.html';
     } else {
+      setLoading(btn, false, '확인');
       msgEl.textContent = data.error || '인증키가 올바르지 않거나 만료되었습니다.';
       msgEl.className = 'msg error';
     }

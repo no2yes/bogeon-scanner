@@ -425,18 +425,20 @@
 
     document.getElementById('logoutBtn').addEventListener('click', function () {
       var token = localStorage.getItem('authToken');
+      // 서버에 세션 무효화 요청은 응답을 기다리지 않고 뒤에서 보내고,
+      // 화면 전환은 곧바로 합니다 (사용자가 응답을 기다릴 필요 없는 동작).
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ type: 'logout', token: token })
-      }).catch(function () {}).finally(function () {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('authEmail');
-        localStorage.removeItem('authName');
-        localStorage.removeItem('authRole');
-        localStorage.removeItem('authFeatures');
-        location.href = 'index.html';
-      });
+      }).catch(function () {});
+
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('authEmail');
+      localStorage.removeItem('authName');
+      localStorage.removeItem('authRole');
+      localStorage.removeItem('authFeatures');
+      location.href = 'index.html';
     });
 
     var isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
