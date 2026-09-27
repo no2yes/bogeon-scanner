@@ -86,10 +86,14 @@
   /* 인쇄할 때는 버튼·입력창·탭 같은 조작용 요소를 다 숨기고, 결과 내용만 보여줍니다. */
   @media print {
     @page { margin: 25mm 10mm 10mm 10mm; }
-    a.back-link, #reportTypeTabs, .field-box, .copy-btn, #loadingOverlay {
+    a.back-link, #reportTypeTabs, #reportControlBox, .copy-btn, #loadingOverlay {
       display: none !important;
     }
     body { background: #fff; padding: 0; }
+    /* textarea는 인쇄 시 화면에 보이는 부분만 찍히는 브라우저 특성이 있어서,
+       인쇄 직전에 내용을 옮겨 담는 일반 텍스트(div)만 대신 보여줍니다. */
+    #resultText { display: none !important; }
+    #resultTextPrintView { display: block !important; }
   }
 </style>
 </head>
@@ -106,7 +110,7 @@
     <button type="button" class="type-tab-btn active" id="tabMonthly">월별 보고서</button>
   </div>
 
-  <div class="field-box">
+  <div class="field-box" id="reportControlBox">
     <div id="weeklyField" style="display:none;">
       <label for="weekDate">이 주(그 주의 아무 날짜나 선택)</label>
       <input type="date" id="weekDate">
@@ -123,6 +127,7 @@
   <div class="field-box" id="weeklyResultBox">
     <label>주간 보고서</label>
     <textarea id="resultText"></textarea>
+    <div id="resultTextPrintView" style="display:none; white-space:pre-wrap; font-size:15px; line-height:1.7; color:#1F2A24;"></div>
     <div style="display:flex; gap:8px; margin-top:10px;">
       <button type="button" id="copyWeeklyBtn" class="copy-btn" style="margin-top:0;">📋 위 내용 전체 복사</button>
       <button type="button" id="printWeeklyBtn" class="copy-btn" style="margin-top:0; border-color:#666; color:#666;">🖨️ 인쇄</button>
@@ -455,6 +460,7 @@
     // 어느 쪽 결과 화면이 지금 보이는지는 이미 display 속성으로 정해져 있으니,
     // 인쇄 시 CSS(@media print)가 버튼·입력창만 숨기고 나머지는 그대로 인쇄합니다.
     document.getElementById('printWeeklyBtn').addEventListener('click', function () {
+      document.getElementById('resultTextPrintView').textContent = document.getElementById('resultText').value;
       window.print();
     });
     document.getElementById('printMonthlyBtn').addEventListener('click', function () {
