@@ -471,11 +471,6 @@
     if (!hasFeature('scan')) disableElement(document.getElementById('scanBtn'));
     if (!hasFeature('qr')) disableElement(document.getElementById('qrOpenBtn'));
 
-    // 계정관리 링크는 주운영자에게만 보여줍니다.
-    if (isAdmin) {
-      document.getElementById('accountLink').style.display = 'inline';
-    }
-
     var isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     if (isMobileDevice) document.body.classList.add('is-mobile');
 
@@ -1366,6 +1361,12 @@
     <a href="backup.html" style="font-size: 10px; color: #bbb; text-decoration: none;">⚙️ 백업/복원</a>
     <a href="account.html" id="accountLink" style="display:none; font-size: 10px; color: #bbb; text-decoration: none;">👤 계정관리</a>
   </div>
+  <script>
+    // 계정관리 링크는 주운영자에게만 보여줍니다. (isAdmin은 위쪽 스크립트에서 이미 정의됨)
+    if (isAdmin) {
+      document.getElementById('accountLink').style.display = 'inline';
+    }
+  </script>
   <div id="versionTag">v2026-09-25-1</div>
 </body>
 </html>
