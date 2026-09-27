@@ -356,6 +356,56 @@ document.getElementById('orgNameSaveBtn').addEventListener('click', function () 
 });
 
 loadOperatorList();
+loadOrgName();
+
+function loadOrgName() {
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'getOrgSettings' })
+  })
+  .then(function (res) { return res.json(); })
+  .then(function (data) {
+    if (data.ok) {
+      document.getElementById('orgNameInput').value = data.orgName || '';
+    }
+  })
+  .catch(function () {});
+}
+
+document.getElementById('orgNameSaveBtn').addEventListener('click', function () {
+  var orgName = document.getElementById('orgNameInput').value.trim();
+  var msgEl = document.getElementById('orgNameMsg');
+  var btn = document.getElementById('orgNameSaveBtn');
+  msgEl.textContent = '';
+  msgEl.className = '';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>저장중...';
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'updateOrgName', token: myToken, orgName: orgName })
+  })
+  .then(function (res) { return res.json(); })
+  .then(function (data) {
+    btn.disabled = false;
+    btn.textContent = '저장';
+    if (data.ok) {
+      msgEl.textContent = '저장되었습니다.';
+      msgEl.className = 'ok';
+    } else {
+      msgEl.textContent = data.error || '저장에 실패했습니다.';
+      msgEl.className = 'error';
+    }
+  })
+  .catch(function () {
+    btn.disabled = false;
+    btn.textContent = '저장';
+    msgEl.textContent = '네트워크 오류가 발생했습니다.';
+    msgEl.className = 'error';
+  });
+});
 </script>
 
 </body>
