@@ -498,21 +498,16 @@
           '<span class="nursing-caretext">' + josa + ' 정성껏 돌봐주었어요</span>' +
           '<span class="nursing-badge">' + badge + '</span>' +
           '<span class="nursing-time">' + item.visitDateTime + '</span>' +
-          '</div>' +
-          '<div class="nursing-report">' +
-          '<div style="font-weight:700; margin-bottom:4px;">정리된 보고서</div>' +
-          '<div class="nursing-report-text"></div>' +
-          '<div style="font-weight:700; margin:10px 0 4px; color:#888;">원문(작성자 입력, AI 정리의 근거)</div>' +
-          '<div class="nursing-rawtext"></div>' +
           '</div>';
-
-        row.querySelector('.nursing-report-text').textContent = item.report;
-        row.querySelector('.nursing-rawtext').textContent = item.rawText || '(원문 없음)';
 
         row.addEventListener('click', function (e) {
           if (e.target.classList.contains('nursing-select-cb')) return; // 체크박스 클릭은 여기서 처리 안 함
-          var reportEl = row.querySelector('.nursing-report');
-          reportEl.style.display = reportEl.style.display === 'block' ? 'none' : 'block';
+
+          var combined =
+            '정리된 보고서\n' + item.report +
+            '\n\n원문(작성자 입력, AI 정리의 근거)\n' + (item.rawText || '(원문 없음)');
+          document.getElementById('detailReportText').value = combined;
+          document.getElementById('detailReportModal').style.display = 'flex';
         });
 
         row.querySelector('.nursing-select-label').addEventListener('click', function (e) {
