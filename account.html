@@ -85,6 +85,16 @@
 <div style="font-size:13px; color:#888; margin-bottom:18px;">일반운영자를 등록하고, 사용 가능한 기능을 지정합니다.</div>
 
 <div class="card">
+  <h2>기관명 설정</h2>
+  <div class="add-row">
+    <input id="orgNameInput" type="text" placeholder="예: OO유치원">
+    <button id="orgNameSaveBtn">저장</button>
+  </div>
+  <div id="orgNameMsg" style="font-size:12px;margin-top:8px;min-height:16px;"></div>
+  <div class="default-note">여기서 설정한 기관명은 로그인 화면과 계정관리 화면 상단에 표시됩니다. 인사이동으로 담당자가 바뀌어도 시스템은 이 기관명을 그대로 유지합니다.</div>
+</div>
+
+<div class="card">
   <h2>새 운영자 등록</h2>
   <div class="add-row">
     <input id="newName" type="text" placeholder="이름">
@@ -282,6 +292,56 @@ document.getElementById('addBtn').addEventListener('click', function () {
       msgEl.textContent = '등록되었습니다.';
       msgEl.className = 'ok';
       loadOperatorList();
+loadOrgName();
+
+function loadOrgName() {
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'getOrgSettings' })
+  })
+  .then(function (res) { return res.json(); })
+  .then(function (data) {
+    if (data.ok) {
+      document.getElementById('orgNameInput').value = data.orgName || '';
+    }
+  })
+  .catch(function () {});
+}
+
+document.getElementById('orgNameSaveBtn').addEventListener('click', function () {
+  var orgName = document.getElementById('orgNameInput').value.trim();
+  var msgEl = document.getElementById('orgNameMsg');
+  var btn = document.getElementById('orgNameSaveBtn');
+  msgEl.textContent = '';
+  msgEl.className = '';
+  btn.disabled = true;
+  btn.textContent = '저장중...';
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'updateOrgName', token: myToken, orgName: orgName })
+  })
+  .then(function (res) { return res.json(); })
+  .then(function (data) {
+    btn.disabled = false;
+    btn.textContent = '저장';
+    if (data.ok) {
+      msgEl.textContent = '저장되었습니다.';
+      msgEl.className = 'ok';
+    } else {
+      msgEl.textContent = data.error || '저장에 실패했습니다.';
+      msgEl.className = 'error';
+    }
+  })
+  .catch(function () {
+    btn.disabled = false;
+    btn.textContent = '저장';
+    msgEl.textContent = '네트워크 오류가 발생했습니다.';
+    msgEl.className = 'error';
+  });
+});
     } else {
       msgEl.textContent = data.error || '등록에 실패했습니다.';
       msgEl.className = 'error';
