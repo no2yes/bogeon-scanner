@@ -778,7 +778,7 @@
     }
 
     // ── 약품관리: 통계 카드 + 보유 약품 전체 목록 ──────────────────────────────
-    var statsPromise = fetch(GAS_URL + '?action=stats')
+    var statsPromise = fetch(GAS_URL + '?action=stats&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
       .then(function (res) { return res.json(); })
       .then(function (stats) {
         document.getElementById('totalCount').textContent = stats.total;
@@ -786,7 +786,7 @@
       })
       .catch(function () {});
 
-    var medListPromise = fetch(GAS_URL + '?action=medList')
+    var medListPromise = fetch(GAS_URL + '?action=medList&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
       .then(function (res) { return res.json(); })
       .then(function (list) { renderMedList(list); })
       .catch(function () {
@@ -794,12 +794,13 @@
       });
 
         function reloadMedList() {
-      fetch(GAS_URL + '?action=medList')
+      var myTokenForMeds = localStorage.getItem('authToken') || '';
+      fetch(GAS_URL + '?action=medList&token=' + encodeURIComponent(myTokenForMeds))
         .then(function (res) { return res.json(); })
         .then(function (list) { renderMedList(list); });
 
       // 폐기로 수량이 바뀌었으니, 상단 통계 카드도 같이 새로고침합니다.
-      fetch(GAS_URL + '?action=stats')
+      fetch(GAS_URL + '?action=stats&token=' + encodeURIComponent(myTokenForMeds))
         .then(function (res) { return res.json(); })
         .then(function (stats) {
           document.getElementById('totalCount').textContent = stats.total;
@@ -926,7 +927,7 @@
           fetch(GAS_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ type: 'disposeMedBatch', items: payloadItems })
+            body: JSON.stringify({ type: 'disposeMedBatch', token: localStorage.getItem('authToken'), items: payloadItems })
           })
             .then(function (res) { return res.json(); })
             .then(function (data) {
@@ -1313,7 +1314,7 @@
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ type: 'deleteNursingLogs', rowIndexes: rowIndexes })
+        body: JSON.stringify({ type: 'deleteNursingLogs', token: localStorage.getItem('authToken'), rowIndexes: rowIndexes })
       })
         .then(function (res) { return res.json(); })
         .then(function (data) {
