@@ -101,6 +101,12 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy7
 // QR을 통해 "빠른 로그인" 토큰(ql)이 붙어서 들어온 경우, 이메일/코드 입력 없이 바로 처리합니다.
 const quickToken = new URLSearchParams(window.location.search).get('ql');
 if (quickToken) {
+  // 서버 응답을 기다리는 동안 이메일/코드 입력 폼이 그대로 보이지 않도록,
+  // 확인 전에 바로 "처리 중" 표시로 바꿔둡니다.
+  document.querySelector('.card').innerHTML =
+    '<div class="icon-circle"><span class="spinner" style="border-top-color:#2F6F5E;width:24px;height:24px;border-width:3px;"></span></div>' +
+    '<div class="sub" style="margin-top:14px;">로그인 처리 중입니다...</div>';
+
   fetch(GAS_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
