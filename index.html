@@ -548,6 +548,12 @@
       return fetch(GAS_URL + '?action=nursingLogList&page=' + page)
         .then(function (res) { return res.json(); })
         .then(function (data) {
+          // 삭제 등으로 이 페이지 항목이 전부 없어졌는데 1페이지가 아니라면,
+          // 빈 화면을 보여주는 대신 자동으로 이전 페이지를 불러옵니다.
+          if ((!data.items || data.items.length === 0) && page > 1) {
+            return loadNursingPage(page - 1);
+          }
+
           nursingCurrentPage = page;
           renderNursingList(data.items);
           renderNursingPagination(data.totalCount, page);
