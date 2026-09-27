@@ -102,7 +102,7 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy7
 (function checkExistingSession(){
   const token = localStorage.getItem('authToken');
   if (token) {
-    location.href = 'index.html';
+    location.href = 'home.html';
   }
 })();
 
@@ -189,7 +189,7 @@ function verifyCode() {
       localStorage.setItem('authFeatures', JSON.stringify(data.features || []));
       msgEl.textContent = '로그인 성공! 이동중...';
       msgEl.className = 'msg ok';
-      setTimeout(() => { location.href = 'index.html'; }, 400);
+      setTimeout(() => { location.href = 'home.html'; }, 400);
     } else {
       msgEl.textContent = data.error || '인증키가 올바르지 않거나 만료되었습니다.';
       msgEl.className = 'msg error';
