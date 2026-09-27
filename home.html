@@ -288,7 +288,7 @@
             <span id="nursingSelectionCount" style="display:none; font-size:12px; color:#2F6F5E; font-weight:600; white-space:nowrap;"></span>
             <button type="button" id="nursingDetailBtn" style="display:none; padding:6px 10px; border-radius:999px; border:1px solid #2F6F5E; background:#fff; color:#2F6F5E; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;">선택 상세내역</button>
                         <button type="button" id="nursingDeleteBtn" style="display:none; padding:6px 10px; border-radius:999px; border:1px solid #DC2626; background:#fff; color:#DC2626; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;">선택 삭제</button>
-            <a class="write-log-btn" href="report.html" style="background: #fff; color: #2F6F5E; border: 1px solid #2F6F5E; box-shadow: none;">📊 보고서</a>
+            <a class="write-log-btn" href="report.html" id="reportLink" style="background: #fff; color: #2F6F5E; border: 1px solid #2F6F5E; box-shadow: none;">📊 보고서</a>
             <a class="write-log-btn" href="nursing-log.html">📝 새 일지 작성</a>
           </div>
         </div>
@@ -442,6 +442,29 @@
       location.href = 'index.html';
     });
 
+    // ── 기능별 사용 권한 반영: 관리자가 켜주지 않은 기능은 옅은 회색으로 비활성화합니다 ──
+    var myRole = localStorage.getItem('authRole');
+    var myFeatures = JSON.parse(localStorage.getItem('authFeatures') || '[]');
+    var isAdmin = myRole === '관리자';
+
+    function hasFeature(key) {
+      return isAdmin || myFeatures.indexOf(key) !== -1;
+    }
+
+    function disableElement(el) {
+      if (!el) return;
+      el.style.opacity = '0.4';
+      el.style.filter = 'grayscale(1)';
+      el.style.pointerEvents = 'none';
+      el.setAttribute('aria-disabled', 'true');
+      el.title = '관리자가 이 기능의 사용 권한을 아직 켜주지 않았어요.';
+    }
+
+    if (!hasFeature('reports')) disableElement(document.getElementById('reportLink'));
+    if (!hasFeature('meds')) disableElement(tabBtnMeds);
+    if (!hasFeature('scan')) disableElement(document.getElementById('scanBtn'));
+    if (!hasFeature('qr')) disableElement(document.getElementById('qrOpenBtn'));
+
     var isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     if (isMobileDevice) document.body.classList.add('is-mobile');
 
@@ -480,7 +503,8 @@
       if (count > 0) {
         countEl.style.display = 'inline';
         btnEl.style.display = 'inline-block';
-        deleteBtnEl.style.display = 'inline-block';
+        // "일지 내용 삭제" 권한이 없으면 선택해도 삭제 버튼은 계속 안 보이게 합니다.
+        deleteBtnEl.style.display = hasFeature('deleteLog') ? 'inline-block' : 'none';
         countEl.textContent = count + '건 선택됨';
       } else {
         countEl.style.display = 'none';
