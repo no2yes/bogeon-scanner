@@ -239,6 +239,12 @@
 </style>
 </head>
 <body>
+  <script>
+  (function checkAuth(){
+    var token = localStorage.getItem('authToken');
+    if (!token) { location.href = 'index.html'; }
+  })();
+  </script>
   <div id="pageLoadingOverlay">
     <div class="big-spinner"></div>
     <div class="page-loading-text">정보를 불러오고 있어요...</div>
@@ -412,7 +418,7 @@
     // ▼▼ 지금은 하드코딩이지만, 나중에 로그인이 연계되면 이 값을 로그인한
     // 사용자 이름으로 채우도록 바꾸면 됩니다(예: 인증키 로그인 시 입력한 이메일에서
     // 이름을 가져오거나, 별도 사용자 정보 조회로 대체). ▼▼
-    var ADMIN_NAME = '동영';
+    var ADMIN_NAME = localStorage.getItem('authName') || '사용자';
     document.getElementById('adminNameTag').textContent = '(' + ADMIN_NAME + ')';
 
     var isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
