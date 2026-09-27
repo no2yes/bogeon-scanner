@@ -106,7 +106,7 @@
       });
     }
 
-    fetch(GAS_URL + '?action=manualFaq')
+    fetch(GAS_URL + '?action=manualFaq&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
       .then(function (res) { return res.json(); })
       .then(function (data) {
         faqData = data;
@@ -131,7 +131,7 @@
       fetch(GAS_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ type: 'manualSearch', question: question })
+        body: JSON.stringify({ type: 'manualSearch', question: question, token: localStorage.getItem('authToken') })
       })
         .then(function (res) { return res.json(); })
         .then(function (data) {
