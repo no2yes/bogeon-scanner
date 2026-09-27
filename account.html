@@ -11,7 +11,7 @@
     background:#F7F5EF; color:#1F2A24; padding:16px; max-width:720px; margin:0 auto;
   }
   h1{font-size:18px; margin:0 0 4px;}
-  .back-link{font-size:13px; color:#666; text-decoration:none; display:inline-block; margin-bottom:14px;}
+  .back-link{ display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; margin-bottom: 14px; border-radius: 999px; border: 1px solid #2F6F5E; background: #fff; font-size: 14px; font-weight: 600; color: #2F6F5E; text-decoration: none; }
   .card{background:#fff; border:1px solid #eee; border-radius:12px; padding:18px; margin-bottom:18px;}
   .card h2{font-size:14px; margin:0 0 12px;}
   .add-row{display:flex; gap:8px; flex-wrap:wrap;}
@@ -80,7 +80,10 @@
 })();
 </script>
 
-<a class="back-link" href="home.html">← 홈으로</a>
+<a class="back-link" href="home.html">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+  홈으로
+</a>
 <h1>계정관리</h1>
 <div style="font-size:13px; color:#888; margin-bottom:18px;">일반운영자를 등록하고, 사용 가능한 기능을 지정합니다.</div>
 

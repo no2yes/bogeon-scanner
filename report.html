@@ -317,7 +317,26 @@
       var uniqueChildren = Object.keys(data.childCounts).length;
       document.getElementById('statTotal').textContent = data.count;
       document.getElementById('statChildren').textContent = uniqueChildren;
-      document.getElementById('statAvg').textContent = (data.count / range.lastDay).toFixed(1);
+      document.getElementById('statAvg').textContent = '–';
+
+      // 일평균 방문수는 주말·공휴일을 뺀 날짜 수로 나눕니다.
+      // 공휴일은 홈 화면 달력에서 쓰는 것과 같은 API(date.nager.at)로 가져옵니다.
+      fetch('https://date.nager.at/api/v3/PublicHolidays/' + range.year + '/KR')
+        .then(function (res) { return res.json(); })
+        .catch(function () { return []; })
+        .then(function (holidays) {
+          var holidaySet = new Set(holidays.map(function (h) { return h.date; }));
+          var workdays = 0;
+          var d = new Date(range.startObj.getTime());
+          while (d <= range.endObj) {
+            var weekday = d.getDay(); // 0=일요일, 6=토요일
+            var y = d.getFullYear(), m = d.getMonth() + 1, dd = d.getDate();
+            var key = y + '-' + (m < 10 ? '0' + m : m) + '-' + (dd < 10 ? '0' + dd : dd);
+            if (weekday !== 0 && weekday !== 6 && !holidaySet.has(key)) workdays++;
+            d.setDate(d.getDate() + 1);
+          }
+          document.getElementById('statAvg').textContent = (data.count / Math.max(1, workdays)).toFixed(1);
+        });
 
       // 그래프 1: 일별 방문 추이 (막대그래프)
       if (dailyChartInstance) dailyChartInstance.destroy();
