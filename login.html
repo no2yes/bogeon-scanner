@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>로그인 - 보건실 관리시스템</title>
+<style>
+  :root{ --accent:#2F6F5E; }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    background:#F7F5EF; padding:20px;
+  }
+  .card{
+    width:100%; max-width:400px; background:#fff; border:1px solid rgba(31,42,36,0.12);
+    border-radius:16px; padding:40px 32px; box-shadow:0 12px 40px rgba(31,42,36,0.08);
+    display:flex; flex-direction:column; align-items:center; gap:20px;
+  }
+  .icon-circle{
+    width:56px; height:56px; border-radius:50%; background:#EAF2EE;
+    display:flex; align-items:center; justify-content:center;
+  }
+  h1{margin:0; font-size:22px; font-weight:700; color:#1F2A24; text-align:center;}
+  .sub{font-size:13px; color:rgba(31,42,36,0.6); text-align:center; line-height:1.6;}
+  .hr{width:100%; height:1px; background:rgba(31,42,36,0.1);}
+  label{font-size:13px; font-weight:600; color:#1F2A24; display:block; margin-bottom:6px;}
+  input{
+    width:100%; height:46px; padding:0 14px; border-radius:10px;
+    border:1px solid rgba(31,42,36,0.18); font-size:14px; color:#1F2A24;
+    font-family:inherit;
+  }
+  input:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  input#code{font-size:20px; letter-spacing:8px; text-align:center;}
+  button{
+    width:100%; height:48px; border:none; border-radius:10px;
+    background:var(--accent); color:#fff; font-weight:600; font-size:15px;
+    cursor:pointer; font-family:inherit;
+  }
+  button:disabled{background:#ccc; color:#888; cursor:not-allowed;}
+  .link-btn{
+    background:transparent; color:rgba(31,42,36,0.55); font-size:12px;
+    height:20px; font-weight:400; text-decoration:underline;
+  }
+  .field{width:100%; display:flex; flex-direction:column; gap:16px;}
+  .msg{font-size:13px; text-align:center; min-height:18px;}
+  .msg.error{color:#c0392b;}
+  .msg.ok{color:#2F6F5E;}
+  .footer-note{font-size:11px; color:rgba(31,42,36,0.4); text-align:center;}
+  .spinner{
+    width:16px; height:16px; border:2px solid rgba(255,255,255,0.5);
+    border-top-color:#fff; border-radius:50%; display:inline-block;
+    animation:spin .7s linear infinite; vertical-align:-3px; margin-right:6px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="icon-circle">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2F6F5E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2 2 7l10 5 10-5-10-5z"></path>
+      <path d="M2 17l10 5 10-5"></path>
+      <path d="M2 12l10 5 10-5"></path>
+    </svg>
+  </div>
+  <h1>보건실 관리시스템</h1>
+  <div class="sub">교직원 전용 시스템입니다.<br>이메일로 인증키를 받아 접속하세요.</div>
+  <div class="hr"></div>
+
+  <!-- STEP 1: 이메일 입력 -->
+  <div id="emailStep" class="field">
+    <div>
+      <label for="email">이메일 주소</label>
+      <input id="email" type="email" placeholder="teacher@example.com" autocomplete="email">
+    </div>
+    <button id="requestBtn" onclick="requestCode()">인증키 받기</button>
+    <div id="emailMsg" class="msg"></div>
+  </div>
+
+  <!-- STEP 2: 코드 입력 -->
+  <div id="codeStep" class="field" style="display:none;">
+    <div class="sub" id="codeStepDesc"></div>
+    <div>
+      <label for="code">인증키 (6자리)</label>
+      <input id="code" type="text" inputmode="numeric" maxlength="6" placeholder="000000">
+    </div>
+    <button id="verifyBtn" onclick="verifyCode()">확인</button>
+    <button class="link-btn" onclick="backToEmail()">이메일 다시 입력하기</button>
+    <div id="codeMsg" class="msg"></div>
+  </div>
+
+  <div class="footer-note">인증키는 10분간 유효합니다.</div>
+</div>
+
+<script>
+// ▼▼ 보건실 관리시스템(gn.kids.health) GAS 웹앱 실행 URL ▼▼
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
+
+// 이미 로그인 되어 있으면 바로 홈으로
+(function checkExistingSession(){
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    location.href = 'index.html';
+  }
+})();
+
+let currentEmail = '';
+
+function setLoading(btn, loading, normalText) {
+  btn.disabled = loading;
+  btn.innerHTML = loading ? '<span class="spinner"></span>처리중...' : normalText;
+}
+
+function requestCode() {
+  const emailInput = document.getElementById('email');
+  const email = emailInput.value.trim();
+  const msgEl = document.getElementById('emailMsg');
+  msgEl.textContent = '';
+  msgEl.className = 'msg';
+
+  if (!email || !email.includes('@')) {
+    msgEl.textContent = '올바른 이메일 주소를 입력해 주세요.';
+    msgEl.className = 'msg error';
+    return;
+  }
+
+  const btn = document.getElementById('requestBtn');
+  setLoading(btn, true, '인증키 받기');
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'requestLoginCode', email: email })
+  })
+  .then(res => res.json())
+  .then(data => {
+    setLoading(btn, false, '인증키 받기');
+    if (data.ok) {
+      currentEmail = email;
+      document.getElementById('codeStepDesc').innerHTML =
+        email + ' 주소로 전송된<br>인증키를 입력해 주세요.';
+      document.getElementById('emailStep').style.display = 'none';
+      document.getElementById('codeStep').style.display = 'flex';
+      document.getElementById('code').value = '';
+      document.getElementById('codeMsg').textContent = '';
+      document.getElementById('code').focus();
+    } else {
+      msgEl.textContent = data.error || '등록되지 않은 이메일입니다. 관리자에게 등록을 요청하세요.';
+      msgEl.className = 'msg error';
+    }
+  })
+  .catch(err => {
+    setLoading(btn, false, '인증키 받기');
+    msgEl.textContent = '네트워크 오류가 발생했습니다. 다시 시도해 주세요.';
+    msgEl.className = 'msg error';
+  });
+}
+
+function verifyCode() {
+  const code = document.getElementById('code').value.trim();
+  const msgEl = document.getElementById('codeMsg');
+  msgEl.textContent = '';
+  msgEl.className = 'msg';
+
+  if (!code || code.length !== 6) {
+    msgEl.textContent = '6자리 인증키를 입력해 주세요.';
+    msgEl.className = 'msg error';
+    return;
+  }
+
+  const btn = document.getElementById('verifyBtn');
+  setLoading(btn, true, '확인');
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'verifyLoginCode', email: currentEmail, code: code })
+  })
+  .then(res => res.json())
+  .then(data => {
+    setLoading(btn, false, '확인');
+    if (data.ok) {
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('authEmail', data.email);
+      localStorage.setItem('authName', data.name);
+      localStorage.setItem('authRole', data.role);
+      localStorage.setItem('authFeatures', JSON.stringify(data.features || []));
+      msgEl.textContent = '로그인 성공! 이동중...';
+      msgEl.className = 'msg ok';
+      setTimeout(() => { location.href = 'index.html'; }, 400);
+    } else {
+      msgEl.textContent = data.error || '인증키가 올바르지 않거나 만료되었습니다.';
+      msgEl.className = 'msg error';
+    }
+  })
+  .catch(err => {
+    setLoading(btn, false, '확인');
+    msgEl.textContent = '네트워크 오류가 발생했습니다. 다시 시도해 주세요.';
+    msgEl.className = 'msg error';
+  });
+}
+
+function backToEmail() {
+  document.getElementById('codeStep').style.display = 'none';
+  document.getElementById('emailStep').style.display = 'flex';
+  document.getElementById('emailMsg').textContent = '';
+}
+
+document.getElementById('email').addEventListener('keydown', e => {
+  if (e.key === 'Enter') requestCode();
+});
+document.getElementById('code').addEventListener('keydown', e => {
+  if (e.key === 'Enter') verifyCode();
+});
+</script>
+
+</body>
+</html>
