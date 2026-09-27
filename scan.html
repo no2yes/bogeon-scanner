@@ -65,12 +65,6 @@
     <div class="loading-text">약품 정보를 찾고 있어요...</div>
   </div>
   <h1>약품 바코드 등록</h1>
-  <!-- 스캔이 끝나면 다시 홈 화면(대시보드)으로 돌아갈 수 있는 링크입니다.
-       href는 비워두고, 아래 스크립트에서 GAS_URL 값을 그대로 넣어줍니다. -->
-  <a id="homeLink" href="#" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; margin-bottom: 14px; border-radius: 999px; border: 1px solid #2F6F5E; background: #fff; font-size: 14px; font-weight: 600; color: #2F6F5E; text-decoration: none;">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-    홈으로
-  </a>
   <p id="status">카메라 권한을 요청합니다...</p>
   <div id="reader"></div>
 
@@ -128,17 +122,11 @@
   <button id="restart">다시 스캔</button>
 
   <script>
-    // 로그인 안 된 상태로 주소를 직접 알고 들어오는 것을 막습니다.
-    (function checkAuth(){
-      if (!localStorage.getItem('authToken')) { location.href = 'index.html'; }
-    })();
+    // 로그인 대신, 주소에 담긴 임시 스캔토큰(발급 후 30분만 유효)이 있는지만 확인합니다.
+    var scanToken = new URLSearchParams(window.location.search).get('st');
 
     // ▼▼ 실제 배포된 Apps Script 웹 앱 URL ▼▼
     var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
-
-    // "홈으로" 링크는 이제 Apps Script 주소가 아니라, 같은 저장소 안의
-    // home.html(경고 리본 없는 새 홈 화면)로 연결합니다.
-    document.getElementById('homeLink').href = 'home.html#meds';
 
     var statusEl = document.getElementById('status');
     var formEl = document.getElementById('form');
@@ -272,6 +260,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                              body: JSON.stringify({
+          scanToken: scanToken,
           barcode: barcodeInput.value,
           name: nameInput.value.trim(),
           company: companyInput.value.trim(),
@@ -299,7 +288,25 @@
     });
 
     restartBtn.addEventListener('click', startScanning);
-    startScanning();
+
+    // 카메라를 켜기 전에, 이 링크(스캔토큰)가 아직 유효한지 서버에 먼저 확인합니다.
+    if (!scanToken) {
+      statusEl.textContent = '이 페이지는 QR코드를 통해서만 열 수 있습니다.';
+    } else {
+      statusEl.textContent = '스캔 링크를 확인하는 중...';
+      fetch(GAS_URL + '?action=verifyScanToken&st=' + encodeURIComponent(scanToken))
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data && data.ok) {
+            startScanning();
+          } else {
+            statusEl.textContent = (data && data.error) ? data.error : '유효하지 않은 링크입니다. 새로 QR을 생성해 주세요.';
+          }
+        })
+        .catch(function () {
+          statusEl.textContent = '스캔 링크 확인 중 오류가 발생했습니다.';
+        });
+    }
   </script>
 </body>
 </html>
