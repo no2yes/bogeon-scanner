@@ -471,6 +471,11 @@
     if (!hasFeature('scan')) disableElement(document.getElementById('scanBtn'));
     if (!hasFeature('qr')) disableElement(document.getElementById('qrOpenBtn'));
 
+    // 계정관리 링크는 주운영자에게만 보여줍니다.
+    if (isAdmin) {
+      document.getElementById('accountLink').style.display = 'inline';
+    }
+
     var isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     if (isMobileDevice) document.body.classList.add('is-mobile');
 
