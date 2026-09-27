@@ -141,6 +141,23 @@
 
   <!-- ── 월별 보고서 결과: 그래프 대시보드(이 안의 내용만 인쇄됩니다) ── -->
   <div id="monthlyResultBox">
+    <div id="reportOrgName" style="font-size:13px; font-weight:700; color:#2F6F5E; margin-bottom:6px;"></div>
+    <script>
+    (function loadOrgNameForReport(){
+      fetch('https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ type: 'getOrgSettings' })
+      })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.ok && data.orgName) {
+          document.getElementById('reportOrgName').textContent = data.orgName;
+        }
+      })
+      .catch(function () {});
+    })();
+    </script>
     <div class="month-stat-cards">
       <div class="month-stat-card"><div class="num" id="statTotal">–</div><div class="label">총 방문 건수</div></div>
       <div class="month-stat-card"><div class="num" id="statChildren">–</div><div class="label">방문 아동 수</div></div>
