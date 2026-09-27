@@ -55,8 +55,19 @@
 </head>
 <body>
   <script>
-  (function checkAuth(){
-    if (!localStorage.getItem('authToken')) { location.href = 'index.html'; }
+  (function checkAdminAuth(){
+    var token = localStorage.getItem('authToken');
+    var role = localStorage.getItem('authRole');
+    if (!token) { location.href = 'index.html'; return; }
+    if (role !== '관리자') {
+      document.write('<div style="max-width:400px;margin:80px auto;text-align:center;background:#fff;border-radius:12px;padding:30px;border:1px solid #eee;font-family:sans-serif;">' +
+        '<h2 style="margin:0 0 10px;font-size:16px;">접근 권한이 없습니다</h2>' +
+        '<p style="font-size:13px;color:#888;">백업/복원은 주운영자만 이용할 수 있습니다.</p>' +
+        '<a href="home.html" style="display:inline-block;margin-top:14px;padding:10px 18px;background:#2F6F5E;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;">홈으로</a>' +
+        '</div>');
+      document.close();
+      throw new Error('not admin');
+    }
   })();
   </script>
   <a class="back-link" href="home.html">
