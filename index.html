@@ -140,9 +140,21 @@
   }
   #qrBox { display: none; text-align: center; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
 
-  #homeQrBox { display: none; margin-top: 20px; }
-  #qrToggleBtn { width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 10px; border: 1px solid #eee; background: #fff; font-size: 13px; color: #666; cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none; }
-  #qrContent { display: none; text-align: center; background: #fff; border: 1px solid #eee; border-top: none; border-radius: 0 0 10px 10px; padding: 20px; }
+  /* QR코드를 보여주는 모달(스캔용·홈 화면 바로 열기용 둘 다 같이 씁니다) */
+  #qrModal {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    align-items: center; justify-content: center; z-index: 900; padding: 20px; box-sizing: border-box;
+  }
+  #qrModal .qr-modal-box {
+    background: #fff; border-radius: 16px; padding: 24px; text-align: center;
+    max-width: 320px; width: 100%; box-sizing: border-box;
+  }
+  #qrModalCaption { font-size: 14px; color: #666; margin-bottom: 16px; }
+  #qrOpenBtn {
+    width: 100%; box-sizing: border-box; padding: 12px 16px; border-radius: 10px;
+    border: 1px solid #eee; background: #fff; font-size: 13px; color: #666;
+    cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none;
+  }
 
   #feedbackFab {
     position: fixed; right: 16px; bottom: 16px; z-index: 500;
@@ -311,11 +323,6 @@
   </span>
 </button>
 
-        <div id="qrBox">
-          <div style="font-size: 13px; color: #666; margin-bottom: 12px;">휴대폰 카메라로 아래 QR코드를 스캔하세요</div>
-          <img id="qrImg" width="200" height="200" alt="스캔 페이지 QR코드">
-        </div>
-
         <h2>보유 약품 목록</h2>
         <table id="table" style="display:none;">
           <thead><tr><th>약품명</th><th>수량</th><th>유통기한</th><th>상태</th><th></th></tr></thead>
@@ -323,15 +330,16 @@
         </table>
         <div id="empty">불러오는 중...</div>
 
-        <div id="homeQrBox">
-          <button type="button" id="qrToggleBtn">
-            <span>스마트폰으로 이 화면 바로 열기</span>
-            <span id="qrToggleArrow">▼</span>
-          </button>
-          <div id="qrContent">
-            <img id="homeQrImg" width="160" height="160" alt="홈 화면 QR코드">
-          </div>
-        </div>
+        <button type="button" id="qrOpenBtn">📱 스마트폰으로 이 화면 바로 열기</button>
+      </div>
+    </div>
+
+    <!-- QR코드 모달: 스캔용·홈 화면 바로 열기용 둘 다 이 하나를 같이 씁니다 -->
+    <div id="qrModal">
+      <div class="qr-modal-box">
+        <div id="qrModalCaption"></div>
+        <img id="qrModalImg" width="220" height="220" alt="QR코드">
+        <button type="button" id="qrModalCloseBtn" class="write-log-btn" style="margin-top: 18px; display: block; width: 100%; box-sizing: border-box; text-align: center; border: none; cursor: pointer;">닫기</button>
       </div>
     </div>
 
@@ -899,44 +907,34 @@
       document.getElementById('pageLoadingOverlay').style.display = 'none';
     });
 
-    // ── 약품관리 탭: QR·스캔 관련 ──────────────────────────────
+    // ── QR 모달 (스캔용 · 홈 화면 바로 열기용 둘 다 같이 씁니다) ──────────────────────────────
+    function openQrModal(caption, url) {
+      document.getElementById('qrModalCaption').textContent = caption;
+      document.getElementById('qrModalImg').src =
+        'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(url);
+      document.getElementById('qrModal').style.display = 'flex';
+    }
+    document.getElementById('qrModalCloseBtn').addEventListener('click', function () {
+      document.getElementById('qrModal').style.display = 'none';
+    });
+
     if (!isMobileDevice) {
-      document.getElementById('homeQrBox').style.display = 'block';
-
-      var qrToggleBtn = document.getElementById('qrToggleBtn');
-      var qrContent = document.getElementById('qrContent');
-      var qrToggleArrow = document.getElementById('qrToggleArrow');
-      var qrImageLoaded = false;
-
-      qrToggleBtn.addEventListener('click', function () {
-        var isOpen = qrContent.style.display === 'block';
-        qrContent.style.display = isOpen ? 'none' : 'block';
-        qrToggleArrow.textContent = isOpen ? '▼' : '▲';
-
-        if (!qrImageLoaded) {
-          var cleanHomeUrl = window.location.href.split('?')[0];
-          document.getElementById('homeQrImg').src =
-            'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(cleanHomeUrl);
-          qrImageLoaded = true;
-        }
+      document.getElementById('qrOpenBtn').style.display = 'block';
+      document.getElementById('qrOpenBtn').addEventListener('click', function () {
+        var cleanHomeUrl = window.location.href.split('?')[0];
+        openQrModal('스마트폰으로 아래 QR코드를 스캔하면 이 화면이 바로 열립니다', cleanHomeUrl);
       });
     }
 
     // 지금 페이지 주소에서 파일명만 "scan.html"로 바꿔서 스캐너 주소를 만듭니다.
     var scannerUrl = new URL('scan.html', window.location.href).href;
     var scanBtn = document.getElementById('scanBtn');
-    var qrBox = document.getElementById('qrBox');
 
     scanBtn.addEventListener('click', function () {
       if (isMobileDevice) {
         window.location.href = 'scan.html';
       } else {
-        var isShown = qrBox.style.display === 'block';
-        qrBox.style.display = isShown ? 'none' : 'block';
-        if (!isShown) {
-          document.getElementById('qrImg').src =
-            'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(scannerUrl);
-        }
+        openQrModal('휴대폰 카메라로 아래 QR코드를 스캔하세요', scannerUrl);
       }
     });
 
