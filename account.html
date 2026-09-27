@@ -316,7 +316,7 @@ document.getElementById('orgNameSaveBtn').addEventListener('click', function () 
   msgEl.textContent = '';
   msgEl.className = '';
   btn.disabled = true;
-  btn.textContent = '저장중...';
+  btn.innerHTML = '<span class="spinner"></span>저장중...';
 
   fetch(GAS_URL, {
     method: 'POST',
