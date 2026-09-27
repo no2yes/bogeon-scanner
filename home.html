@@ -250,7 +250,9 @@
     <div class="page-loading-text">정보를 불러오고 있어요...</div>
   </div>
 
-  <h1>보건실 관리시스템 <span id="adminNameTag" style="font-size: 13px; font-weight: 500; color: #888;"></span></h1>
+  <h1>보건실 관리시스템 <span id="adminNameTag" style="font-size: 13px; font-weight: 500; color: #888;"></span>
+    <button type="button" id="logoutBtn" style="float:right; font-size:12px; padding:5px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; color:#666; cursor:pointer; font-family:inherit;">로그아웃</button>
+  </h1>
 
   <div class="nursing-layout">
     <div class="nursing-left">
@@ -420,6 +422,22 @@
     // 이름을 가져오거나, 별도 사용자 정보 조회로 대체). ▼▼
     var ADMIN_NAME = localStorage.getItem('authName') || '사용자';
     document.getElementById('adminNameTag').textContent = '(' + ADMIN_NAME + ')';
+
+    document.getElementById('logoutBtn').addEventListener('click', function () {
+      var token = localStorage.getItem('authToken');
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ type: 'logout', token: token })
+      }).catch(function () {}).finally(function () {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authEmail');
+        localStorage.removeItem('authName');
+        localStorage.removeItem('authRole');
+        localStorage.removeItem('authFeatures');
+        location.href = 'index.html';
+      });
+    });
 
     var isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
     if (isMobileDevice) document.body.classList.add('is-mobile');
