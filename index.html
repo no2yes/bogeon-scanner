@@ -186,7 +186,7 @@ function verifyCode() {
       localStorage.setItem('authEmail', data.email);
       localStorage.setItem('authName', data.name);
       localStorage.setItem('authRole', data.role);
-      localStorage.setItem('authFeatures', JSON.stringify(data.features || []));
+      localStorage.setItem('authFeatures', JSON.stringify(data.allowedFeatures || []));
       msgEl.textContent = '로그인 성공! 이동중...';
       msgEl.className = 'msg ok';
       setTimeout(() => { location.href = 'home.html'; }, 400);
