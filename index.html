@@ -98,13 +98,42 @@
 // ▼▼ 보건실 관리시스템(gn.kids.health) GAS 웹앱 실행 URL ▼▼
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
 
-// 이미 로그인 되어 있으면 바로 홈으로
-(function checkExistingSession(){
-  const token = localStorage.getItem('authToken');
-  if (token) {
-    location.href = 'home.html';
-  }
-})();
+// QR을 통해 "빠른 로그인" 토큰(ql)이 붙어서 들어온 경우, 이메일/코드 입력 없이 바로 처리합니다.
+const quickToken = new URLSearchParams(window.location.search).get('ql');
+if (quickToken) {
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'consumeQuickLoginToken', quickToken: quickToken })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.ok) {
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('authEmail', data.email);
+      localStorage.setItem('authName', data.name);
+      localStorage.setItem('authRole', data.role);
+      localStorage.setItem('authFeatures', JSON.stringify(data.allowedFeatures || []));
+      location.href = 'home.html';
+    } else {
+      document.body.innerHTML =
+        '<div style="max-width:400px;margin:80px auto;text-align:center;font-family:sans-serif;">' +
+        '<p style="color:#c0392b;">' + (data.error || '로그인에 실패했습니다.') + '</p>' +
+        '<a href="index.html" style="color:#2F6F5E;">이메일로 로그인하기</a></div>';
+    }
+  })
+  .catch(() => {
+    document.body.innerHTML = '<div style="max-width:400px;margin:80px auto;text-align:center;font-family:sans-serif;">네트워크 오류가 발생했습니다.</div>';
+  });
+} else {
+  // 이미 로그인 되어 있으면 바로 홈으로
+  (function checkExistingSession(){
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      location.href = 'home.html';
+    }
+  })();
+}
 
 let currentEmail = '';
 
