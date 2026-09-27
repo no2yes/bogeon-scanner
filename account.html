@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>계정관리 - 보건실 관리시스템</title>
+<style>
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;
+    background:#F7F5EF; color:#1F2A24; padding:16px; max-width:720px; margin:0 auto;
+  }
+  h1{font-size:18px; margin:0 0 4px;}
+  .back-link{font-size:13px; color:#666; text-decoration:none; display:inline-block; margin-bottom:14px;}
+  .card{background:#fff; border:1px solid #eee; border-radius:12px; padding:18px; margin-bottom:18px;}
+  .card h2{font-size:14px; margin:0 0 12px;}
+  .add-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .add-row input{
+    flex:1; min-width:140px; height:42px; padding:0 12px; border-radius:8px;
+    border:1px solid #ccc; font-size:14px; font-family:inherit;
+  }
+  .add-row button{
+    height:42px; padding:0 18px; border-radius:8px; border:none;
+    background:#2F6F5E; color:#fff; font-weight:600; font-size:14px;
+    cursor:pointer; font-family:inherit; white-space:nowrap;
+  }
+  .add-row button:disabled{background:#ccc; color:#888; cursor:not-allowed;}
+  #addMsg{font-size:12px; margin-top:8px; min-height:16px;}
+  #addMsg.error{color:#c0392b;}
+  #addMsg.ok{color:#2F6F5E;}
+
+  .op-item{border:1px solid #eee; border-radius:10px; padding:14px; margin-bottom:10px;}
+  .op-top{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .op-name{font-weight:700; font-size:15px;}
+  .op-email{font-size:12px; color:#888;}
+  .op-role-badge{
+    font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;
+    background:#EAF2EE; color:#2F6F5E; margin-left:6px;
+  }
+  .op-role-badge.admin{background:#FBEFDA; color:#B7791F;}
+  .op-delete-btn{
+    font-size:12px; color:#DC2626; border:1px solid #DC2626; background:#fff;
+    border-radius:8px; padding:5px 10px; cursor:pointer; font-family:inherit;
+  }
+  .feature-toggles{display:flex; gap:14px; flex-wrap:wrap; margin-top:12px; padding-top:12px; border-top:1px solid #f0f0f0;}
+  .feature-toggle{display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; user-select:none;}
+  .feature-toggle input{width:16px; height:16px; cursor:pointer;}
+  .default-note{font-size:11px; color:#aaa; margin-top:8px;}
+
+  #opListEmpty{font-size:13px; color:#999; text-align:center; padding:20px 0;}
+  #adminOnlyNotice{
+    display:none; max-width:400px; margin:80px auto; text-align:center;
+    background:#fff; border-radius:12px; padding:30px; border:1px solid #eee;
+  }
+  .spinner{
+    width:16px; height:16px; border:2px solid rgba(255,255,255,0.5);
+    border-top-color:#fff; border-radius:50%; display:inline-block;
+    animation:spin .7s linear infinite; vertical-align:-3px; margin-right:6px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<script>
+// ── 관리자 전용 가드: 로그인 안 됐거나 관리자가 아니면 접근 차단 ──
+(function checkAdminAuth(){
+  var token = localStorage.getItem('authToken');
+  var role = localStorage.getItem('authRole');
+  if (!token) { location.href = 'index.html'; return; }
+  if (role !== '관리자') {
+    document.write('<div style="max-width:400px;margin:80px auto;text-align:center;background:#fff;border-radius:12px;padding:30px;border:1px solid #eee;font-family:sans-serif;">' +
+      '<h2 style="margin:0 0 10px;font-size:16px;">접근 권한이 없습니다</h2>' +
+      '<p style="font-size:13px;color:#888;">계정관리는 주운영자만 이용할 수 있습니다.</p>' +
+      '<a href="home.html" style="display:inline-block;margin-top:14px;padding:10px 18px;background:#2F6F5E;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;">홈으로</a>' +
+      '</div>');
+    document.close();
+    throw new Error('not admin');
+  }
+})();
+</script>
+
+<a class="back-link" href="home.html">← 홈으로</a>
+<h1>계정관리</h1>
+<div style="font-size:13px; color:#888; margin-bottom:18px;">일반운영자를 등록하고, 사용 가능한 기능을 지정합니다.</div>
+
+<div class="card">
+  <h2>새 운영자 등록</h2>
+  <div class="add-row">
+    <input id="newName" type="text" placeholder="이름">
+    <input id="newEmail" type="email" placeholder="이메일 주소">
+    <button id="addBtn">등록</button>
+  </div>
+  <div id="addMsg"></div>
+  <div class="default-note">등록하면 처음에는 "새 일지 작성" 기능만 사용할 수 있고, 나머지는 아래 목록에서 필요한 만큼 켜주시면 됩니다.</div>
+</div>
+
+<div class="card">
+  <h2>운영자 목록</h2>
+  <div id="opList"></div>
+  <div id="opListEmpty" style="display:none;">불러오는 중...</div>
+</div>
+
+<script>
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
+var myToken = localStorage.getItem('authToken');
+
+// 화면에 표시할 이름표와, 서버(TOGGLABLE_FEATURES)에 보낼 키를 짝지어 둡니다.
+var FEATURE_LABELS = {
+  reports:   '보고서',
+  meds:      '약품관리',
+  deleteLog: '일지 내용 삭제',
+  scan:      '약품 바코드 스캔하기',
+  qr:        '스마트폰으로 이 화면 열기'
+};
+var FEATURE_KEYS = Object.keys(FEATURE_LABELS);
+
+function loadOperatorList() {
+  var listEl = document.getElementById('opList');
+  var emptyEl = document.getElementById('opListEmpty');
+  emptyEl.style.display = 'block';
+  emptyEl.textContent = '불러오는 중...';
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'getOperatorList', token: myToken })
+  })
+  .then(function (res) { return res.json(); })
+  .then(function (data) {
+    if (!data.ok) {
+      emptyEl.textContent = data.error || '목록을 불러오지 못했습니다.';
+      return;
+    }
+    renderOperatorList(data.operators || []);
+  })
+  .catch(function () {
+    emptyEl.textContent = '네트워크 오류로 불러오지 못했습니다.';
+  });
+}
+
+function renderOperatorList(operators) {
+  var listEl = document.getElementById('opList');
+  var emptyEl = document.getElementById('opListEmpty');
+  listEl.innerHTML = '';
+
+  if (operators.length === 0) {
+    emptyEl.style.display = 'block';
+    emptyEl.textContent = '등록된 운영자가 없습니다.';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  operators.forEach(function (op) {
+    var item = document.createElement('div');
+    item.className = 'op-item';
+
+    var isAdmin = op.role === '관리자';
+    var allowedSet = new Set(op.features || []);
+
+    var topHtml =
+      '<div class="op-top">' +
+      '<div>' +
+      '<span class="op-name">' + op.name + '</span>' +
+      '<span class="op-role-badge' + (isAdmin ? ' admin' : '') + '">' + (isAdmin ? '주운영자' : '일반운영자') + '</span>' +
+      '<div class="op-email">' + op.email + '</div>' +
+      '</div>' +
+      (isAdmin ? '' : '<button type="button" class="op-delete-btn">삭제</button>') +
+      '</div>';
+
+    item.innerHTML = topHtml;
+
+    if (!isAdmin) {
+      var togglesWrap = document.createElement('div');
+      togglesWrap.className = 'feature-toggles';
+
+      FEATURE_KEYS.forEach(function (key) {
+        var label = document.createElement('label');
+        label.className = 'feature-toggle';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = allowedSet.has(key);
+        cb.dataset.feature = key;
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(FEATURE_LABELS[key]));
+        togglesWrap.appendChild(label);
+
+        cb.addEventListener('change', function () {
+          var checkedFeatures = Array.from(togglesWrap.querySelectorAll('input[type=checkbox]:checked'))
+            .map(function (c) { return c.dataset.feature; });
+          updateOperatorFeatures(op.email, checkedFeatures, cb, label);
+        });
+      });
+
+      item.appendChild(togglesWrap);
+
+      item.querySelector('.op-delete-btn').addEventListener('click', function () {
+        if (!confirm(op.name + '(' + op.email + ') 운영자를 삭제할까요?')) return;
+        deleteOperator(op.email, item);
+      });
+    }
+
+    listEl.appendChild(item);
+  });
+}
+
+function updateOperatorFeatures(email, features, changedCb, changedLabel) {
+  changedLabel.style.opacity = '0.5';
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'updateOperatorPermissions', token: myToken, email: email, features: features })
+  })
+  .then(function (res) { return res.json(); })
+  .then(function (data) {
+    changedLabel.style.opacity = '1';
+    if (!data.ok) {
+      alert('변경 실패: ' + (data.error || '알 수 없는 오류'));
+      changedCb.checked = !changedCb.checked; // 실패 시 원상복구
+    }
+  })
+  .catch(function () {
+    changedLabel.style.opacity = '1';
+    alert('네트워크 오류로 변경하지 못했습니다.');
+    changedCb.checked = !changedCb.checked;
+  });
+}
+
+function deleteOperator(email, itemEl) {
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'deleteOperator', token: myToken, email: email })
+  })
+  .then(function (res) { return res.json(); })
+  .then(function (data) {
+    if (data.ok) {
+      itemEl.remove();
+    } else {
+      alert('삭제 실패: ' + (data.error || '알 수 없는 오류'));
+    }
+  })
+  .catch(function () {
+    alert('네트워크 오류로 삭제하지 못했습니다.');
+  });
+}
+
+document.getElementById('addBtn').addEventListener('click', function () {
+  var name = document.getElementById('newName').value.trim();
+  var email = document.getElementById('newEmail').value.trim();
+  var msgEl = document.getElementById('addMsg');
+  msgEl.textContent = '';
+  msgEl.className = '';
+
+  if (!name) {
+    msgEl.textContent = '이름을 입력해 주세요.';
+    msgEl.className = 'error';
+    return;
+  }
+  if (!email || !email.includes('@')) {
+    msgEl.textContent = '올바른 이메일 주소를 입력해 주세요.';
+    msgEl.className = 'error';
+    return;
+  }
+
+  var btn = document.getElementById('addBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>등록중...';
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'addOperator', token: myToken, name: name, email: email })
+  })
+  .then(function (res) { return res.json(); })
+  .then(function (data) {
+    btn.disabled = false;
+    btn.textContent = '등록';
+    if (data.ok) {
+      document.getElementById('newName').value = '';
+      document.getElementById('newEmail').value = '';
+      msgEl.textContent = '등록되었습니다.';
+      msgEl.className = 'ok';
+      loadOperatorList();
+    } else {
+      msgEl.textContent = data.error || '등록에 실패했습니다.';
+      msgEl.className = 'error';
+    }
+  })
+  .catch(function () {
+    btn.disabled = false;
+    btn.textContent = '등록';
+    msgEl.textContent = '네트워크 오류가 발생했습니다.';
+    msgEl.className = 'error';
+  });
+});
+
+loadOperatorList();
+</script>
+
+</body>
+</html>
