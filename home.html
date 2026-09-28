@@ -138,6 +138,8 @@
     color: #DC2626; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
     -webkit-appearance: none; appearance: none; white-space: nowrap;
   }
+  .med-list-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; gap:10px; }
+  #medSortSelect { padding:6px 10px; border-radius:8px; border:1px solid #ccc; font-size:12px; font-family:inherit; background:#fff; color:#555; }
 
   /* 보건일지 목록 */
   .nursing-item { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 9px 12px; margin-bottom: 6px; cursor: pointer; }
@@ -729,12 +731,25 @@
         })();
         </script>
 
-        <h2>보유 약품 목록</h2>
+        <div class="med-list-header">
+          <h2 style="margin:0;">보유 약품 목록</h2>
+          <select id="medSortSelect">
+            <option value="recent">최신입력순</option>
+            <option value="name">가나다순</option>
+            <option value="expiry">유통기한 임박순</option>
+          </select>
+        </div>
         <table id="table" style="display:none;">
           <thead><tr><th>약품명</th><th>수량</th><th>유통기한</th><th>상태</th><th></th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
         <div id="empty">불러오는 중...</div>
+
+        <div id="medPagination" style="display:none; align-items:center; justify-content:center; gap:12px; margin-top:8px;">
+          <button type="button" id="medPrevBtn" style="padding:4px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:12px; cursor:pointer; -webkit-appearance:none; appearance:none;">‹ 이전</button>
+          <span id="medPageLabel" style="font-size:12px; color:#666;"></span>
+          <button type="button" id="medNextBtn" style="padding:4px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:12px; cursor:pointer; -webkit-appearance:none; appearance:none;">다음 ›</button>
+        </div>
 
         <button type="button" id="qrOpenBtn">📱 스마트폰으로 이 화면 바로 열기</button>
       </div>
@@ -1200,18 +1215,30 @@
       })
       .catch(function () {});
 
+    var allMedGroups = [];
+    var medSortMode = 'recent';
+    var medCurrentPage = 1;
+    var medPageSize = 8;
+
     var medListPromise = fetch(GAS_URL + '?action=medList&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
       .then(function (res) { return res.json(); })
-      .then(function (list) { renderMedList(list); })
+      .then(function (list) {
+        allMedGroups = list || [];
+        medCurrentPage = 1;
+        applySortAndRenderMedList();
+      })
       .catch(function () {
         document.getElementById('empty').textContent = '데이터를 불러오지 못했습니다.';
       });
 
-        function reloadMedList() {
+    function reloadMedList() {
       var myTokenForMeds = localStorage.getItem('authToken') || '';
       fetch(GAS_URL + '?action=medList&token=' + encodeURIComponent(myTokenForMeds))
         .then(function (res) { return res.json(); })
-        .then(function (list) { renderMedList(list); });
+        .then(function (list) {
+          allMedGroups = list || [];
+          applySortAndRenderMedList(); // 지금 보던 페이지·정렬 상태를 유지합니다.
+        });
 
       // 폐기로 수량이 바뀌었으니, 상단 통계 카드도 같이 새로고침합니다.
       fetch(GAS_URL + '?action=stats&token=' + encodeURIComponent(myTokenForMeds))
@@ -1222,6 +1249,61 @@
         })
         .catch(function () {});
     }
+
+    // 최신입력순은 그룹 안 등록 건들의 rowIndex(시트에 늦게 추가될수록 큰 번호) 중 가장 큰 값을 기준으로 합니다.
+    function sortMedGroups(list, mode) {
+      var sorted = list.slice();
+      if (mode === 'name') {
+        sorted.sort(function (a, b) { return a.name.localeCompare(b.name, 'ko'); });
+      } else if (mode === 'expiry') {
+        sorted.sort(function (a, b) {
+          var da = (a.dday === null || a.dday === undefined) ? Infinity : a.dday;
+          var db = (b.dday === null || b.dday === undefined) ? Infinity : b.dday;
+          return da - db;
+        });
+      } else { // 'recent'
+        sorted.sort(function (a, b) {
+          var maxA = Math.max.apply(null, a.items.map(function (it) { return it.rowIndex; }));
+          var maxB = Math.max.apply(null, b.items.map(function (it) { return it.rowIndex; }));
+          return maxB - maxA;
+        });
+      }
+      return sorted;
+    }
+
+    function applySortAndRenderMedList() {
+      var sorted = sortMedGroups(allMedGroups, medSortMode);
+      var totalPages = Math.max(1, Math.ceil(sorted.length / medPageSize));
+      if (medCurrentPage > totalPages) medCurrentPage = totalPages;
+      var pageItems = sorted.slice((medCurrentPage - 1) * medPageSize, medCurrentPage * medPageSize);
+      renderMedList(pageItems);
+      renderMedPagination(sorted.length, medCurrentPage);
+    }
+
+    function renderMedPagination(totalCount, page) {
+      var totalPages = Math.max(1, Math.ceil(totalCount / medPageSize));
+      var paginationEl = document.getElementById('medPagination');
+      if (totalCount <= medPageSize) {
+        paginationEl.style.display = 'none';
+        return;
+      }
+      paginationEl.style.display = 'flex';
+      document.getElementById('medPageLabel').textContent = page + ' / ' + totalPages + '페이지';
+      document.getElementById('medPrevBtn').disabled = page <= 1;
+      document.getElementById('medNextBtn').disabled = page >= totalPages;
+    }
+
+    document.getElementById('medSortSelect').addEventListener('change', function () {
+      medSortMode = this.value;
+      medCurrentPage = 1;
+      applySortAndRenderMedList();
+    });
+    document.getElementById('medPrevBtn').addEventListener('click', function () {
+      if (medCurrentPage > 1) { medCurrentPage--; applySortAndRenderMedList(); }
+    });
+    document.getElementById('medNextBtn').addEventListener('click', function () {
+      medCurrentPage++; applySortAndRenderMedList();
+    });
 
     function renderMedList(groups) {
       var emptyEl = document.getElementById('empty');
