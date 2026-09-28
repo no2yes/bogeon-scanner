@@ -764,7 +764,7 @@
         <div class="med-list-header">
           <h2 style="margin:0;">보유 약품 목록</h2>
           <div style="display:flex; align-items:center; gap:8px;">
-            <input type="text" id="medSearchInput" placeholder="약품명 검색" style="padding:6px 8px; border-radius:8px; border:1px solid #ccc; font-size:12px; font-family:inherit; width:70px;">
+            <input type="text" id="medSearchInput" placeholder="약품명 검색" style="padding:6px 8px; border-radius:8px; border:1px solid #ccc; font-size:12px; font-family:inherit; width:65px;">
             <label style="display:flex; align-items:center; gap:4px; font-size:12px; color:#555; white-space:nowrap;">
               <input type="checkbox" id="medOpenedOnlyCheckbox">
               개봉만
@@ -1440,7 +1440,7 @@
         openedBadge.textContent = '개봉 ' + openedTotal;
         var openBtn = document.createElement('button');
         openBtn.type = 'button';
-        openBtn.textContent = '+1';
+        openBtn.textContent = '뜯+1';
         openBtn.style.cssText = 'padding:2px 8px; border-radius:6px; border:1px solid #999; background:#fff; font-size:11px; cursor:pointer;';
         openedCell.appendChild(openedBadge);
         openedCell.appendChild(openBtn);
