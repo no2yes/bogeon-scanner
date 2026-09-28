@@ -498,11 +498,14 @@
               return;
             }
             items.forEach(function (item) {
+              // 제품총수량 + 제형구분을 합치면 "내용량"에 해당합니다 (예: 6 + 주사 → "6주사").
+              var packInfo = (item.totalQty !== undefined && item.totalQty !== '' ? item.totalQty : '') + (item.formType || '');
+
               var row = document.createElement('div');
               row.className = 'drug-search-item';
               row.innerHTML =
                 '<div class="drug-search-item-name">' + item.name + '</div>' +
-                '<div class="drug-search-item-sub">' + item.company + ' · ' + item.spec + '</div>';
+                '<div class="drug-search-item-sub">' + item.company + ' · ' + item.spec + (packInfo ? ' · ' + packInfo : '') + '</div>';
               row.addEventListener('click', function () {
                 selectedDrug = item;
                 document.getElementById('drugSearchResults').innerHTML = '';
@@ -510,7 +513,7 @@
                 document.getElementById('drugRegisterSuccessMsg').style.display = 'none';
                 document.getElementById('drugRegisterSelectedName').textContent =
                   item.name + ' (' + item.company + ' · ' + item.spec + ')';
-                document.getElementById('drugRegContentAmount').value = '';
+                document.getElementById('drugRegContentAmount').value = packInfo;
                 document.getElementById('drugRegStockQty').value = '';
                 document.getElementById('drugRegExpiry').value = '';
                 document.getElementById('drugRegisterForm').style.display = 'block';
