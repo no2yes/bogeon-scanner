@@ -428,39 +428,83 @@
         <div id="drugSearchModal" class="drug-search-modal">
           <div class="drug-search-modal-box">
             <div class="drug-search-modal-header">
-              <div class="drug-search-modal-title">🔍 약품명으로 검색해서 등록</div>
+              <div class="drug-search-modal-title">약품 등록</div>
               <button type="button" id="drugSearchModalCloseBtn" class="drug-search-modal-close">✕</button>
             </div>
 
-            <div class="search-input-row">
-              <input type="text" id="drugSearchInput" placeholder="약품명 입력 (2자 이상)">
-              <button type="button" id="drugSearchBtn">검색</button>
+            <div id="drugModalTabBar" style="display:flex; gap:8px; margin-bottom:14px;">
+              <button type="button" id="drugModeTabSearch" class="tab-btn active">🔍 검색해서 등록</button>
+              <button type="button" id="drugModeTabManual" class="tab-btn">✏️ 기타(직접 입력)</button>
             </div>
-            <div id="drugSearchResults"></div>
 
-            <div id="drugRegisterForm" style="display:none;">
-              <div id="drugRegisterSelectedName" class="drug-selected-name"></div>
+            <div id="drugSearchPanel">
+              <div class="search-input-row">
+                <input type="text" id="drugSearchInput" placeholder="약품명 입력 (2자 이상)">
+                <button type="button" id="drugSearchBtn">검색</button>
+              </div>
+              <div id="drugSearchResults"></div>
+
+              <div id="drugRegisterForm" style="display:none;">
+                <div id="drugRegisterSelectedName" class="drug-selected-name"></div>
+                <div class="field-row-inline">
+                  <div>
+                    <label>내용량</label>
+                    <input type="text" id="drugRegContentAmount" placeholder="예: 10캡슐">
+                  </div>
+                  <div>
+                    <label>수량</label>
+                    <input type="text" id="drugRegStockQty" placeholder="예: 5">
+                  </div>
+                  <div>
+                    <label>유통기한</label>
+                    <input type="date" id="drugRegExpiry">
+                  </div>
+                </div>
+                <div class="drug-register-actions">
+                  <button type="button" id="drugRegisterCancelBtn">취소</button>
+                  <button type="button" id="drugRegisterSaveBtn">등록</button>
+                </div>
+              </div>
+
+              <div id="drugRegisterSuccessMsg" class="drug-register-success" style="display:none;">✅ 등록되었습니다. 이어서 다른 약품을 검색해 등록할 수 있어요.</div>
+            </div>
+
+            <div id="drugManualPanel" style="display:none;">
+              <div class="field-row-inline" style="margin-bottom:0;">
+                <div style="flex:2;">
+                  <label>품목명 *</label>
+                  <input type="text" id="drugManualName" placeholder="예: 생리대, 마스크 밴드">
+                </div>
+                <div>
+                  <label>업체명</label>
+                  <input type="text" id="drugManualCompany" placeholder="선택 입력">
+                </div>
+              </div>
               <div class="field-row-inline">
                 <div>
+                  <label>규격</label>
+                  <input type="text" id="drugManualSpec" placeholder="선택 입력">
+                </div>
+                <div>
                   <label>내용량</label>
-                  <input type="text" id="drugRegContentAmount" placeholder="예: 10캡슐">
+                  <input type="text" id="drugManualContentAmount" placeholder="선택 입력">
+                </div>
+              </div>
+              <div class="field-row-inline">
+                <div>
+                  <label>수량 *</label>
+                  <input type="text" id="drugManualStockQty" placeholder="예: 5">
                 </div>
                 <div>
-                  <label>수량</label>
-                  <input type="text" id="drugRegStockQty" placeholder="예: 5">
-                </div>
-                <div>
-                  <label>유통기한</label>
-                  <input type="date" id="drugRegExpiry">
+                  <label>유통기한 *</label>
+                  <input type="date" id="drugManualExpiry">
                 </div>
               </div>
               <div class="drug-register-actions">
-                <button type="button" id="drugRegisterCancelBtn">취소</button>
-                <button type="button" id="drugRegisterSaveBtn">등록</button>
+                <button type="button" id="drugManualSaveBtn">등록</button>
               </div>
+              <div id="drugManualSuccessMsg" class="drug-register-success" style="display:none;">✅ 등록되었습니다. 이어서 다른 항목을 등록할 수 있어요.</div>
             </div>
-
-            <div id="drugRegisterSuccessMsg" class="drug-register-success" style="display:none;">✅ 등록되었습니다. 이어서 다른 약품을 검색해 등록할 수 있어요.</div>
           </div>
         </div>
 
@@ -481,6 +525,11 @@
             document.getElementById('drugSearchResults').innerHTML = '';
             document.getElementById('drugRegisterForm').style.display = 'none';
             document.getElementById('drugRegisterSuccessMsg').style.display = 'none';
+            document.getElementById('drugManualSuccessMsg').style.display = 'none';
+            document.getElementById('drugSearchPanel').style.display = 'block';
+            document.getElementById('drugManualPanel').style.display = 'none';
+            document.getElementById('drugModeTabSearch').classList.add('active');
+            document.getElementById('drugModeTabManual').classList.remove('active');
             selectedDrug = null;
             if (didRegisterAny) {
               location.reload(); // 등록한 게 있으면 닫을 때 목록을 새로고침합니다.
@@ -489,6 +538,75 @@
 
           document.getElementById('drugSearchOpenBtn').addEventListener('click', openModal);
           document.getElementById('drugSearchModalCloseBtn').addEventListener('click', closeModal);
+
+          document.getElementById('drugModeTabSearch').addEventListener('click', function () {
+            this.classList.add('active');
+            document.getElementById('drugModeTabManual').classList.remove('active');
+            document.getElementById('drugSearchPanel').style.display = 'block';
+            document.getElementById('drugManualPanel').style.display = 'none';
+          });
+          document.getElementById('drugModeTabManual').addEventListener('click', function () {
+            this.classList.add('active');
+            document.getElementById('drugModeTabSearch').classList.remove('active');
+            document.getElementById('drugSearchPanel').style.display = 'none';
+            document.getElementById('drugManualPanel').style.display = 'block';
+          });
+
+          document.getElementById('drugManualSaveBtn').addEventListener('click', function () {
+            var name = document.getElementById('drugManualName').value.trim();
+            var company = document.getElementById('drugManualCompany').value.trim();
+            var spec = document.getElementById('drugManualSpec').value.trim();
+            var contentAmount = document.getElementById('drugManualContentAmount').value.trim();
+            var stockQty = document.getElementById('drugManualStockQty').value.trim();
+            var expiry = document.getElementById('drugManualExpiry').value;
+
+            if (!name) { alert('품목명을 입력해 주세요.'); return; }
+            if (!stockQty) { alert('수량을 입력해 주세요.'); return; }
+            if (!expiry) { alert('유통기한을 입력해 주세요.'); return; }
+
+            var btn = document.getElementById('drugManualSaveBtn');
+            btn.disabled = true;
+            btn.textContent = '등록중...';
+
+            fetch(GAS_URL_DS, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({
+                type: 'registerMedManual',
+                token: myTokenDS,
+                barcode: 'ETC-' + Date.now(), // 표준코드가 없는 기타 품목이라 임시 코드를 만들어 씁니다.
+                name: name,
+                company: company,
+                spec: spec,
+                contentAmount: contentAmount,
+                stockQty: stockQty,
+                expiry: expiry
+              })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+              btn.disabled = false;
+              btn.textContent = '등록';
+              if (data.ok) {
+                didRegisterAny = true;
+                document.getElementById('drugManualName').value = '';
+                document.getElementById('drugManualCompany').value = '';
+                document.getElementById('drugManualSpec').value = '';
+                document.getElementById('drugManualContentAmount').value = '';
+                document.getElementById('drugManualStockQty').value = '';
+                document.getElementById('drugManualExpiry').value = '';
+                document.getElementById('drugManualSuccessMsg').style.display = 'block';
+                document.getElementById('drugManualName').focus();
+              } else {
+                alert('등록 실패: ' + (data.error || '알 수 없는 오류'));
+              }
+            })
+            .catch(function () {
+              btn.disabled = false;
+              btn.textContent = '등록';
+              alert('네트워크 오류로 등록하지 못했습니다.');
+            });
+          });
 
           function renderResults(items) {
             var box = document.getElementById('drugSearchResults');
