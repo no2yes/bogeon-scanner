@@ -1454,10 +1454,10 @@
           itemTop.appendChild(editBtn);
 
           var editForm = document.createElement('div');
-          editForm.style.cssText = 'display:none; flex-direction:column; gap:6px; margin-top:6px; padding:8px; background:#fff; border:1px dashed #ccc; border-radius:6px;';
+          editForm.style.cssText = 'display:none; flex-direction:row; flex-wrap:wrap; align-items:flex-end; gap:6px; margin-top:6px; padding:8px; background:#fff; border:1px dashed #ccc; border-radius:6px;';
 
           function fieldWrap(label, inputHtml) {
-            return '<div style="display:flex; flex-direction:column; gap:2px;">' +
+            return '<div style="display:flex; flex-direction:column; gap:2px; flex:1; min-width:64px;">' +
               '<span style="font-size:11px; color:#888;">' + label + '</span>' +
               inputHtml +
               '</div>';
@@ -1466,18 +1466,20 @@
           var formHtml = '';
           if (isManual) {
             formHtml +=
-              fieldWrap('약품명', '<input type="text" class="edit-name" value="' + group.name.replace(/"/g, '&quot;') + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">') +
-              fieldWrap('업체명(선택)', '<input type="text" class="edit-company" value="' + (item.company || '').replace(/"/g, '&quot;') + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">') +
-              fieldWrap('규격(선택)', '<input type="text" class="edit-spec" value="' + (item.spec || '').replace(/"/g, '&quot;') + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">') +
-              fieldWrap('내용량(선택)', '<input type="text" class="edit-content" value="' + (item.contentAmount || '').toString().replace(/"/g, '&quot;') + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">');
+              '<div style="width:100%; display:flex; flex-wrap:wrap; gap:6px;">' +
+              fieldWrap('약품명', '<input type="text" class="edit-name" value="' + group.name.replace(/"/g, '&quot;') + '" style="width:100%; box-sizing:border-box; padding:6px; border:1px solid #ccc; border-radius:6px;">') +
+              fieldWrap('업체명(선택)', '<input type="text" class="edit-company" value="' + (item.company || '').replace(/"/g, '&quot;') + '" style="width:100%; box-sizing:border-box; padding:6px; border:1px solid #ccc; border-radius:6px;">') +
+              fieldWrap('규격(선택)', '<input type="text" class="edit-spec" value="' + (item.spec || '').replace(/"/g, '&quot;') + '" style="width:100%; box-sizing:border-box; padding:6px; border:1px solid #ccc; border-radius:6px;">') +
+              fieldWrap('내용량(선택)', '<input type="text" class="edit-content" value="' + (item.contentAmount || '').toString().replace(/"/g, '&quot;') + '" style="width:100%; box-sizing:border-box; padding:6px; border:1px solid #ccc; border-radius:6px;">') +
+              '</div>';
           } else {
-            formHtml += '<div style="font-size:11px; color:#999;">표준코드로 등록된 약품이라 수량·유통기한·개봉수량만 수정할 수 있어요.</div>';
+            formHtml += '<div style="width:100%; font-size:11px; color:#999;">표준코드로 등록된 약품이라 수량·유통기한·개봉수량만 수정할 수 있어요.</div>';
           }
           formHtml +=
-            fieldWrap('수량', '<input type="number" class="edit-qty" min="1" value="' + item.qty + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">') +
-            fieldWrap('유통기한', '<input type="date" class="edit-expiry" value="' + (group.expiry || '') + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">') +
-            fieldWrap('개봉수량', '<input type="number" class="edit-opened" min="0" value="' + (item.openedQty || 0) + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">') +
-            '<button type="button" class="edit-save-btn" style="padding:6px; border-radius:6px; border:none; background:#2F6F5E; color:#fff; cursor:pointer;">저장</button>';
+            fieldWrap('수량', '<input type="number" class="edit-qty" min="1" value="' + item.qty + '" style="width:100%; box-sizing:border-box; padding:6px; border:1px solid #ccc; border-radius:6px;">') +
+            fieldWrap('유통기한', '<input type="date" class="edit-expiry" value="' + (group.expiry || '') + '" style="width:100%; box-sizing:border-box; padding:6px; border:1px solid #ccc; border-radius:6px;">') +
+            fieldWrap('개봉수량', '<input type="number" class="edit-opened" min="0" value="' + (item.openedQty || 0) + '" style="width:100%; box-sizing:border-box; padding:6px; border:1px solid #ccc; border-radius:6px;">') +
+            '<button type="button" class="edit-save-btn" style="flex:0 0 auto; align-self:flex-end; padding:6px 12px; border-radius:6px; border:none; background:#2F6F5E; color:#fff; cursor:pointer;">저장</button>';
           editForm.innerHTML = formHtml;
           itemRow.appendChild(editForm);
 
