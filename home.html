@@ -957,7 +957,7 @@
 
       if (!items || items.length === 0) {
         emptyEl.textContent = '등록된 보건일지가 없습니다.';
-        listEl.style.minHeight = nursingListMinHeight + 'px';
+        listEl.style.minHeight = ensureNursingListMinHeight_(listEl) + 'px';
         return;
       }
       emptyEl.style.display = 'none';
@@ -1027,9 +1027,32 @@
       if (items.length >= nursingPageSize) {
         nursingListMinHeight = listEl.scrollHeight;
       }
-      if (nursingListMinHeight > 0) {
-        listEl.style.minHeight = nursingListMinHeight + 'px';
+      listEl.style.minHeight = ensureNursingListMinHeight_(listEl) + 'px';
+    }
+
+    // 실제 목록을 건드리지 않고, 화면 밖에 8개짜리 더미 목록을 잠깐 그려서
+    // 높이만 잰 뒤 지웁니다. 한 번도 8개가 꽉 찬 적이 없어도(처음부터 0개여도)
+    // 목록 영역이 8개 분량의 높이를 유지하게 됩니다.
+    function ensureNursingListMinHeight_(listEl) {
+      if (nursingListMinHeight > 0) return nursingListMinHeight;
+
+      var probeContainer = document.createElement('div');
+      probeContainer.className = listEl.className;
+      probeContainer.style.cssText =
+        'position:absolute; visibility:hidden; pointer-events:none; top:-9999px; left:-9999px; width:' + listEl.clientWidth + 'px;';
+      document.body.appendChild(probeContainer);
+
+      for (var i = 0; i < nursingPageSize; i++) {
+        var probe = document.createElement('div');
+        probe.className = 'nursing-item';
+        probe.innerHTML = '<div class="nursing-top">&nbsp;</div>';
+        probeContainer.appendChild(probe);
       }
+      var height = probeContainer.scrollHeight;
+      document.body.removeChild(probeContainer);
+
+      nursingListMinHeight = height;
+      return height;
     }
     var nursingCurrentPage = 1;
     var nursingPageSize = 8;
@@ -1308,11 +1331,15 @@
     function renderMedList(groups) {
       var emptyEl = document.getElementById('empty');
       var tbody = document.getElementById('tbody');
+      var tableEl = document.getElementById('table');
       tbody.innerHTML = '';
+
+      var medListMinH = ensureMedListMinHeight_(tableEl);
 
       if (!groups || groups.length === 0) {
         emptyEl.textContent = '보유 중인 약품이 없습니다.';
-        document.getElementById('table').style.display = 'none';
+        emptyEl.style.minHeight = medListMinH + 'px';
+        tableEl.style.display = 'none';
         return;
       }
       emptyEl.style.display = 'none';
@@ -1454,7 +1481,39 @@
         tbody.appendChild(detailTr);
       });
 
-      document.getElementById('table').style.display = 'table';
+      tableEl.style.minHeight = medListMinH + 'px';
+      tableEl.style.display = 'table';
+
+      if (groups.length >= medPageSize) {
+        window.medListMinHeight = Math.max(window.medListMinHeight || 0, tableEl.getBoundingClientRect().height);
+      }
+    }
+
+    // 실제 테이블을 건드리지 않고, 화면 밖에 8개짜리 더미 테이블을 잠깐 그려서
+    // 높이만 잰 뒤 지웁니다. 마지막 페이지가 8개보다 적거나(0개 포함) 한 번도
+    // 8개가 꽉 찬 적이 없어도 테이블 영역이 8개 분량의 높이를 유지하게 됩니다.
+    function ensureMedListMinHeight_(tableEl) {
+      if (window.medListMinHeight > 0) return window.medListMinHeight;
+
+      var probeTable = document.createElement('table');
+      probeTable.className = tableEl.className;
+      probeTable.style.cssText =
+        'position:absolute; visibility:hidden; pointer-events:none; top:-9999px; left:-9999px; width:' + tableEl.clientWidth + 'px;';
+      var probeTbody = document.createElement('tbody');
+      probeTable.appendChild(probeTbody);
+
+      for (var i = 0; i < medPageSize; i++) {
+        var probe = document.createElement('tr');
+        probe.className = 'med-group-row';
+        probe.innerHTML = '<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>';
+        probeTbody.appendChild(probe);
+      }
+      document.body.appendChild(probeTable);
+      var height = probeTable.getBoundingClientRect().height;
+      document.body.removeChild(probeTable);
+
+      window.medListMinHeight = height;
+      return height;
     }
 
     // 통계 카드·목록·보건일지 목록을 모두 불러오면(또는 실패해도) 첫 로딩 화면을 걷습니다.
