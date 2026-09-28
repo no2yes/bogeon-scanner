@@ -1357,15 +1357,57 @@
         var rowClass = isExpired ? 'med-row-expired' : (isSoon ? 'med-row-soon' : '');
 
         // 그룹 줄(클릭하면 펼쳐집니다) — 같은 약품명+같은 유통기한을 합친 수량(totalQty)을 보여줍니다.
+        var contentAmountText = (group.items[0] && group.items[0].contentAmount) ? group.items[0].contentAmount : '';
+        var openedTotal = group.items.reduce(function (sum, it) { return sum + (it.openedQty || 0); }, 0);
+
         var groupTr = document.createElement('tr');
         groupTr.className = rowClass + ' med-group-row';
         groupTr.style.cursor = 'pointer';
         groupTr.innerHTML =
-          '<td><span class="group-arrow">▶</span> ' + group.name + '</td>' +
+          '<td><span class="group-arrow">▶</span> ' + group.name + (contentAmountText ? ' <span style="color:#999; font-size:12px;">(' + contentAmountText + ')</span>' : '') + '</td>' +
           '<td>' + group.totalQty + '</td>' +
           '<td>' + (group.expiry || '–') + '</td>' +
           '<td>' + ddayHtml + '</td>' +
           '<td></td>';
+
+        var openedCell = groupTr.querySelector('td:last-child');
+        var openedBadge = document.createElement('span');
+        openedBadge.style.cssText = 'font-size:11px; color:#999; margin-right:6px;';
+        openedBadge.textContent = '개봉 ' + openedTotal;
+        var openBtn = document.createElement('button');
+        openBtn.type = 'button';
+        openBtn.textContent = '개봉 +1';
+        openBtn.style.cssText = 'padding:2px 8px; border-radius:6px; border:1px solid #999; background:#fff; font-size:11px; cursor:pointer;';
+        openedCell.appendChild(openedBadge);
+        openedCell.appendChild(openBtn);
+
+        openBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var target = null;
+          for (var gi = 0; gi < group.items.length; gi++) {
+            if (group.items[gi].qty > (group.items[gi].openedQty || 0)) { target = group.items[gi]; break; }
+          }
+          if (!target) { alert('더 이상 개봉 처리할 수량이 없습니다.'); return; }
+          openBtn.disabled = true;
+          fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ type: 'openMedQty', token: localStorage.getItem('authToken'), rowIndex: target.rowIndex })
+          })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+              if (data && data.ok) {
+                reloadMedList();
+              } else {
+                openBtn.disabled = false;
+                alert('처리 실패: ' + (data && data.error ? data.error : '알 수 없는 오류'));
+              }
+            })
+            .catch(function () {
+              openBtn.disabled = false;
+              alert('처리 중 오류가 발생했습니다.');
+            });
+        });
 
         // 펼침 줄: 등록 건 구분 없이, 수량만큼 삭제할 개수를 숫자로 입력받습니다.
         var detailTr = document.createElement('tr');
@@ -1378,6 +1420,90 @@
 
         var detailBox = document.createElement('div');
         detailBox.style.cssText = 'background:#FAF9F5; padding:10px 14px; border-top:1px dashed #ddd; border-bottom:1px dashed #ddd;';
+
+        var itemsListBox = document.createElement('div');
+        itemsListBox.style.cssText = 'display:flex; flex-direction:column; gap:6px; margin-bottom:8px;';
+        group.items.forEach(function (item) {
+          var isManual = item.code && item.code.indexOf('ETC-') === 0;
+          var itemRow = document.createElement('div');
+          itemRow.style.cssText = 'font-size:12px; color:#666;';
+
+          var itemTop = document.createElement('div');
+          itemTop.style.cssText = 'display:flex; align-items:center; gap:8px;';
+          itemTop.innerHTML =
+            '<span>' + item.qty + '개 등록분' + (item.company ? ' · ' + item.company : '') + (item.spec ? ' · ' + item.spec : '') + '</span>';
+          itemRow.appendChild(itemTop);
+
+          if (isManual) {
+            var editBtn = document.createElement('button');
+            editBtn.type = 'button';
+            editBtn.textContent = '수정';
+            editBtn.style.cssText = 'padding:2px 8px; border-radius:6px; border:1px solid #2F6F5E; background:#fff; color:#2F6F5E; font-size:11px; cursor:pointer;';
+            itemTop.appendChild(editBtn);
+
+            var editForm = document.createElement('div');
+            editForm.style.cssText = 'display:none; flex-direction:column; gap:6px; margin-top:6px; padding:8px; background:#fff; border:1px dashed #ccc; border-radius:6px;';
+            editForm.innerHTML =
+              '<input type="text" class="edit-name" placeholder="약품명" value="' + group.name.replace(/"/g, '&quot;') + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">' +
+              '<input type="text" class="edit-company" placeholder="업체명(선택)" value="' + (item.company || '').replace(/"/g, '&quot;') + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">' +
+              '<input type="text" class="edit-spec" placeholder="규격(선택)" value="' + (item.spec || '').replace(/"/g, '&quot;') + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">' +
+              '<input type="text" class="edit-content" placeholder="내용량(선택)" value="' + (item.contentAmount || '').toString().replace(/"/g, '&quot;') + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">' +
+              '<input type="number" class="edit-qty" placeholder="수량" min="1" value="' + item.qty + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">' +
+              '<input type="date" class="edit-expiry" value="' + (group.expiry || '') + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">' +
+              '<button type="button" class="edit-save-btn" style="padding:6px; border-radius:6px; border:none; background:#2F6F5E; color:#fff; cursor:pointer;">저장</button>';
+            itemRow.appendChild(editForm);
+
+            editBtn.addEventListener('click', function (e) {
+              e.stopPropagation();
+              editForm.style.display = editForm.style.display === 'none' ? 'flex' : 'none';
+            });
+
+            editForm.querySelector('.edit-save-btn').addEventListener('click', function (e) {
+              e.stopPropagation();
+              var payload = {
+                type: 'updateMedManual',
+                token: localStorage.getItem('authToken'),
+                rowIndex: item.rowIndex,
+                name: editForm.querySelector('.edit-name').value.trim(),
+                company: editForm.querySelector('.edit-company').value.trim(),
+                spec: editForm.querySelector('.edit-spec').value.trim(),
+                contentAmount: editForm.querySelector('.edit-content').value.trim(),
+                stockQty: editForm.querySelector('.edit-qty').value,
+                expiry: editForm.querySelector('.edit-expiry').value
+              };
+              if (!payload.name || !payload.stockQty || !payload.expiry) {
+                alert('약품명·수량·유통기한은 꼭 입력해야 합니다.');
+                return;
+              }
+              var saveBtn = editForm.querySelector('.edit-save-btn');
+              saveBtn.disabled = true;
+              saveBtn.textContent = '저장 중...';
+              fetch(GAS_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+              })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                  if (data && data.ok) {
+                    reloadMedList();
+                  } else {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = '저장';
+                    alert('수정 실패: ' + (data && data.error ? data.error : '알 수 없는 오류'));
+                  }
+                })
+                .catch(function () {
+                  saveBtn.disabled = false;
+                  saveBtn.textContent = '저장';
+                  alert('처리 중 오류가 발생했습니다.');
+                });
+            });
+          }
+
+          itemsListBox.appendChild(itemRow);
+        });
+        detailBox.appendChild(itemsListBox);
 
         var qtyRow = document.createElement('div');
         qtyRow.style.cssText = 'display:flex; align-items:center; gap:8px; margin-top:4px; flex-wrap:wrap;';
