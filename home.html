@@ -16,6 +16,12 @@
     color: #666; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
     -webkit-appearance: none; appearance: none;
   }
+  @media (max-width: 480px) {
+  #table th:nth-child(3),
+  #table td:nth-child(3) {
+    display: none;
+  }
+}
   .tab-btn.active { background: #2F6F5E; border-color: #2F6F5E; color: #fff; }
 
   .stat-cards { display: flex; gap: 12px; margin-bottom: 20px; }
@@ -1410,7 +1416,7 @@
         openedBadge.textContent = '개봉 ' + openedTotal;
         var openBtn = document.createElement('button');
         openBtn.type = 'button';
-        openBtn.textContent = '개봉 +1';
+        openBtn.textContent = '+1';
         openBtn.style.cssText = 'padding:2px 8px; border-radius:6px; border:1px solid #999; background:#fff; font-size:11px; cursor:pointer;';
         openedCell.appendChild(openedBadge);
         openedCell.appendChild(openBtn);
