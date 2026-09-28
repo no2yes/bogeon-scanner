@@ -1357,6 +1357,9 @@
       }
       emptyEl.style.display = 'none';
 
+      var openDetailTr = null;
+      var openGroupArrow = null;
+
       groups.forEach(function (group) {
         var isExpired = group.dday !== null && group.dday < 0;
         var isSoon = group.dday !== null && group.dday >= 0 && group.dday <= 30;
@@ -1635,8 +1638,22 @@
 
         groupTr.addEventListener('click', function () {
           var isOpen = detailTr.style.display === 'table-row';
+
+          if (openDetailTr && openDetailTr !== detailTr) {
+            openDetailTr.style.display = 'none';
+            if (openGroupArrow) openGroupArrow.textContent = '▶';
+          }
+
           detailTr.style.display = isOpen ? 'none' : 'table-row';
           groupTr.querySelector('.group-arrow').textContent = isOpen ? '▶' : '▼';
+
+          if (isOpen) {
+            openDetailTr = null;
+            openGroupArrow = null;
+          } else {
+            openDetailTr = detailTr;
+            openGroupArrow = groupTr.querySelector('.group-arrow');
+          }
         });
 
         tbody.appendChild(groupTr);
