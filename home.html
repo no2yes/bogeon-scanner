@@ -735,6 +735,10 @@
           <h2 style="margin:0;">보유 약품 목록</h2>
           <div style="display:flex; align-items:center; gap:8px;">
             <input type="text" id="medSearchInput" placeholder="약품명 검색" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; font-size:12px; font-family:inherit; width:110px;">
+            <label style="display:flex; align-items:center; gap:4px; font-size:12px; color:#555; white-space:nowrap;">
+              <input type="checkbox" id="medOpenedOnlyCheckbox">
+              개봉만
+            </label>
             <select id="medSortSelect">
               <option value="recent">최신입력순</option>
               <option value="name">가나다순</option>
@@ -1298,8 +1302,14 @@
     }
 
     var medSearchKeyword = '';
+    var medOnlyOpened = false;
     document.getElementById('medSearchInput').addEventListener('input', function () {
       medSearchKeyword = this.value.trim();
+      medCurrentPage = 1;
+      applySortAndRenderMedList();
+    });
+    document.getElementById('medOpenedOnlyCheckbox').addEventListener('change', function () {
+      medOnlyOpened = this.checked;
       medCurrentPage = 1;
       applySortAndRenderMedList();
     });
@@ -1308,6 +1318,11 @@
       var filtered = medSearchKeyword
         ? allMedGroups.filter(function (g) { return g.name.toLowerCase().indexOf(medSearchKeyword.toLowerCase()) !== -1; })
         : allMedGroups;
+      if (medOnlyOpened) {
+        filtered = filtered.filter(function (g) {
+          return g.items.some(function (it) { return (it.openedQty || 0) > 0; });
+        });
+      }
       var sorted = sortMedGroups(filtered, medSortMode);
       var totalPages = Math.max(1, Math.ceil(sorted.length / medPageSize));
       if (medCurrentPage > totalPages) medCurrentPage = totalPages;
