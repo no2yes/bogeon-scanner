@@ -746,11 +746,13 @@
             </select>
           </div>
         </div>
-        <table id="table" style="display:none;">
-          <thead><tr><th>약품명</th><th>수량</th><th>유통기한</th><th>상태</th><th></th></tr></thead>
-          <tbody id="tbody"></tbody>
-        </table>
-        <div id="empty">불러오는 중...</div>
+        <div id="medListArea">
+          <table id="table" style="display:none;">
+            <thead><tr><th>약품명</th><th>수량</th><th>유통기한</th><th>상태</th><th></th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+          <div id="empty">불러오는 중...</div>
+        </div>
 
         <div id="medPagination" style="display:none; align-items:center; justify-content:center; gap:12px; margin-top:8px;">
           <button type="button" id="medPrevBtn" style="padding:4px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:12px; cursor:pointer; -webkit-appearance:none; appearance:none;">‹ 이전</button>
@@ -1360,13 +1362,14 @@
       var emptyEl = document.getElementById('empty');
       var tbody = document.getElementById('tbody');
       var tableEl = document.getElementById('table');
+      var medListArea = document.getElementById('medListArea');
       tbody.innerHTML = '';
 
       var medListMinH = ensureMedListMinHeight_(tableEl);
+      medListArea.style.minHeight = medListMinH + 'px';
 
       if (!groups || groups.length === 0) {
         emptyEl.textContent = '보유 중인 약품이 없습니다.';
-        emptyEl.style.minHeight = medListMinH + 'px';
         tableEl.style.display = 'none';
         return;
       }
@@ -1675,7 +1678,6 @@
         tbody.appendChild(detailTr);
       });
 
-      tableEl.style.minHeight = medListMinH + 'px';
       tableEl.style.display = 'table';
 
       if (groups.length >= medPageSize) {
