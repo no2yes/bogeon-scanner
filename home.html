@@ -1469,6 +1469,7 @@
           formHtml +=
             '<input type="number" class="edit-qty" placeholder="수량" min="1" value="' + item.qty + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">' +
             '<input type="date" class="edit-expiry" value="' + (group.expiry || '') + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">' +
+            '<input type="number" class="edit-opened" placeholder="개봉수량" min="0" value="' + (item.openedQty || 0) + '" style="padding:6px; border:1px solid #ccc; border-radius:6px;">' +
             '<button type="button" class="edit-save-btn" style="padding:6px; border-radius:6px; border:none; background:#2F6F5E; color:#fff; cursor:pointer;">저장</button>';
           editForm.innerHTML = formHtml;
           itemRow.appendChild(editForm);
@@ -1485,7 +1486,8 @@
               token: localStorage.getItem('authToken'),
               rowIndex: item.rowIndex,
               stockQty: editForm.querySelector('.edit-qty').value,
-              expiry: editForm.querySelector('.edit-expiry').value
+              expiry: editForm.querySelector('.edit-expiry').value,
+              openedQty: editForm.querySelector('.edit-opened').value
             };
             if (isManual) {
               payload.name = editForm.querySelector('.edit-name').value.trim();
