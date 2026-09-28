@@ -50,16 +50,26 @@
   .scan-card .scan-arrow { flex-shrink: 0; opacity: 0.8; }
 
   /* 약품 등록 방식 2가지(바코드 스캔 / 이름 검색)를 나란히 배치 */
-  .meds-input-row { display: flex; gap: 12px; margin-bottom: 20px; align-items: flex-start; flex-wrap: wrap; }
-  .scan-card-compact { flex: 1; min-width: 200px; margin-bottom: 0; padding: 14px; }
-  .scan-card-compact .scan-title { font-size: 14px; }
-  .scan-card-compact .scan-sub { font-size: 11px; }
+  /* 약품 등록 방식 2가지(바코드 스캔 / 이름 검색) 버튼을 반반 높이 맞춰 배치 */
+  .meds-input-row { display: flex; gap: 12px; margin-bottom: 20px; }
+  .scan-card-half { flex: 1; min-width: 0; margin-bottom: 0; }
 
-  .search-card {
-    flex: 2; min-width: 260px; background: #fff; border: 1px solid #eee; border-radius: 16px;
-    padding: 16px 18px; box-sizing: border-box;
+  /* 이름 검색용 모달 (화면 안에 화면처럼 뜨는 팝업) — 계속 검색해서 등록할 수 있습니다 */
+  .drug-search-modal {
+    display: none; position: fixed; inset: 0; background: rgba(31,42,36,0.45);
+    z-index: 800; align-items: center; justify-content: center; padding: 16px;
   }
-  .search-card-title { font-size: 14px; font-weight: 700; color: #1F2A24; margin-bottom: 10px; }
+  .drug-search-modal.open { display: flex; }
+  .drug-search-modal-box {
+    background: #fff; border-radius: 16px; padding: 20px; width: 100%; max-width: 420px;
+    max-height: 85vh; overflow-y: auto; box-sizing: border-box;
+  }
+  .drug-search-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .drug-search-modal-title { font-size: 15px; font-weight: 700; color: #1F2A24; }
+  .drug-search-modal-close {
+    border: none; background: transparent; font-size: 16px; color: #888; cursor: pointer;
+    padding: 4px 6px; -webkit-appearance: none; appearance: none;
+  }
   .search-input-row { display: flex; gap: 8px; }
   .search-input-row input {
     flex: 1; height: 42px; padding: 0 12px; border-radius: 8px; border: 1px solid #ccc;
@@ -93,6 +103,7 @@
   }
   #drugRegisterCancelBtn { background: #fff; border: 1px solid #ccc; color: #666; }
   #drugRegisterSaveBtn { background: #2F6F5E; border: none; color: #fff; }
+  .drug-register-success { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #EAF2EE; color: #2F6F5E; font-size: 13px; text-align: center; }
   h2 { font-size: 14px; margin: 0 0 8px; }
   /* 오늘/이번 주/이번 달 방문 아동 수 카드 */
   .quick-stat-cards { display: flex; gap: 8px; margin-bottom: 14px; }
@@ -388,9 +399,9 @@
         </div>
 
         <div class="meds-input-row">
-          <button type="button" id="scanBtn" class="scan-card scan-card-compact">
+          <button type="button" id="scanBtn" class="scan-card scan-card-half">
             <span class="scan-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                 <path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M6 8v8M9 8v8M12 8v8M15 8v5M18 8v8"/>
               </svg>
             </span>
@@ -400,8 +411,27 @@
             </span>
           </button>
 
-          <div class="search-card">
-            <div class="search-card-title">🔍 약품명으로 검색해서 등록</div>
+          <button type="button" id="drugSearchOpenBtn" class="scan-card scan-card-half">
+            <span class="scan-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
+            <span class="scan-text">
+              <div class="scan-title">🔍 이름으로 검색</div>
+              <div class="scan-sub">약품명 검색해서 등록</div>
+            </span>
+          </button>
+        </div>
+
+        <!-- 약품명 검색 모달: 검색 → 선택 → 등록을 닫지 않고 반복할 수 있습니다 -->
+        <div id="drugSearchModal" class="drug-search-modal">
+          <div class="drug-search-modal-box">
+            <div class="drug-search-modal-header">
+              <div class="drug-search-modal-title">🔍 약품명으로 검색해서 등록</div>
+              <button type="button" id="drugSearchModalCloseBtn" class="drug-search-modal-close">✕</button>
+            </div>
+
             <div class="search-input-row">
               <input type="text" id="drugSearchInput" placeholder="약품명 입력 (2자 이상)">
               <button type="button" id="drugSearchBtn">검색</button>
@@ -429,6 +459,8 @@
                 <button type="button" id="drugRegisterSaveBtn">등록</button>
               </div>
             </div>
+
+            <div id="drugRegisterSuccessMsg" class="drug-register-success" style="display:none;">✅ 등록되었습니다. 이어서 다른 약품을 검색해 등록할 수 있어요.</div>
           </div>
         </div>
 
@@ -437,6 +469,26 @@
           var GAS_URL_DS = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
           var myTokenDS = localStorage.getItem('authToken');
           var selectedDrug = null;
+          var didRegisterAny = false;
+
+          function openModal() {
+            document.getElementById('drugSearchModal').classList.add('open');
+            document.getElementById('drugSearchInput').focus();
+          }
+          function closeModal() {
+            document.getElementById('drugSearchModal').classList.remove('open');
+            document.getElementById('drugSearchInput').value = '';
+            document.getElementById('drugSearchResults').innerHTML = '';
+            document.getElementById('drugRegisterForm').style.display = 'none';
+            document.getElementById('drugRegisterSuccessMsg').style.display = 'none';
+            selectedDrug = null;
+            if (didRegisterAny) {
+              location.reload(); // 등록한 게 있으면 닫을 때 목록을 새로고침합니다.
+            }
+          }
+
+          document.getElementById('drugSearchOpenBtn').addEventListener('click', openModal);
+          document.getElementById('drugSearchModalCloseBtn').addEventListener('click', closeModal);
 
           function renderResults(items) {
             var box = document.getElementById('drugSearchResults');
@@ -455,6 +507,7 @@
                 selectedDrug = item;
                 document.getElementById('drugSearchResults').innerHTML = '';
                 document.getElementById('drugSearchInput').value = '';
+                document.getElementById('drugRegisterSuccessMsg').style.display = 'none';
                 document.getElementById('drugRegisterSelectedName').textContent =
                   item.name + ' (' + item.company + ' · ' + item.spec + ')';
                 document.getElementById('drugRegContentAmount').value = '';
@@ -536,8 +589,11 @@
               btn.disabled = false;
               btn.textContent = '등록';
               if (data.ok) {
-                alert('등록되었습니다.');
-                location.reload();
+                didRegisterAny = true;
+                document.getElementById('drugRegisterForm').style.display = 'none';
+                document.getElementById('drugRegisterSuccessMsg').style.display = 'block';
+                selectedDrug = null;
+                document.getElementById('drugSearchInput').focus();
               } else {
                 alert('등록 실패: ' + (data.error || '알 수 없는 오류'));
               }
