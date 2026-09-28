@@ -733,11 +733,14 @@
 
         <div class="med-list-header">
           <h2 style="margin:0;">보유 약품 목록</h2>
-          <select id="medSortSelect">
-            <option value="recent">최신입력순</option>
-            <option value="name">가나다순</option>
-            <option value="expiry">유통기한 임박순</option>
-          </select>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="text" id="medSearchInput" placeholder="약품명 검색" style="padding:6px 10px; border-radius:8px; border:1px solid #ccc; font-size:12px; font-family:inherit; width:110px;">
+            <select id="medSortSelect">
+              <option value="recent">최신입력순</option>
+              <option value="name">가나다순</option>
+              <option value="expiry">유통기한 임박순</option>
+            </select>
+          </div>
         </div>
         <table id="table" style="display:none;">
           <thead><tr><th>약품명</th><th>수량</th><th>유통기한</th><th>상태</th><th></th></tr></thead>
@@ -1294,8 +1297,18 @@
       return sorted;
     }
 
+    var medSearchKeyword = '';
+    document.getElementById('medSearchInput').addEventListener('input', function () {
+      medSearchKeyword = this.value.trim();
+      medCurrentPage = 1;
+      applySortAndRenderMedList();
+    });
+
     function applySortAndRenderMedList() {
-      var sorted = sortMedGroups(allMedGroups, medSortMode);
+      var filtered = medSearchKeyword
+        ? allMedGroups.filter(function (g) { return g.name.toLowerCase().indexOf(medSearchKeyword.toLowerCase()) !== -1; })
+        : allMedGroups;
+      var sorted = sortMedGroups(filtered, medSortMode);
       var totalPages = Math.max(1, Math.ceil(sorted.length / medPageSize));
       if (medCurrentPage > totalPages) medCurrentPage = totalPages;
       var pageItems = sorted.slice((medCurrentPage - 1) * medPageSize, medCurrentPage * medPageSize);
