@@ -1264,7 +1264,10 @@
     var nursingPageSize = 9;
     var nursingSearchKeyword = '';
 
+        var nursingSearchRequestId = 0;
+
     function loadNursingPage(page) {
+      var thisRequestId = ++nursingSearchRequestId;
       var nursingLoadingEl = document.getElementById('nursingListLoadingOverlay');
       nursingLoadingEl.style.display = 'flex';
       document.getElementById('nursingPrevBtn').disabled = true;
@@ -1273,6 +1276,12 @@
       return fetch(GAS_URL + '?action=nursingLogList&page=' + page + '&keyword=' + encodeURIComponent(nursingSearchKeyword))
         .then(function (res) { return res.json(); })
         .then(function (data) {
+          // 이 요청보다 더 최신 요청(예: 그 사이에 또 검색어를 바꿈)이 이미
+          // 시작됐다면, 늦게 도착한 이 응답은 화면에 반영하지 않고 버립니다.
+          // (그렇지 않으면 검색어를 지웠는데 이전 검색 결과가 뒤늦게 덮어써서
+          // 화면이 안 돌아오는 문제가 생깁니다.)
+          if (thisRequestId !== nursingSearchRequestId) return;
+
           // 삭제 등으로 이 페이지 항목이 전부 없어졌는데 1페이지가 아니라면,
           // 빈 화면을 보여주는 대신 자동으로 이전 페이지를 불러옵니다.
           if ((!data.items || data.items.length === 0) && page > 1) {
@@ -1285,14 +1294,19 @@
           nursingLoadingEl.style.display = 'none';
         })
         .catch(function () {
+          if (thisRequestId !== nursingSearchRequestId) return;
           nursingLoadingEl.style.display = 'none';
           document.getElementById('nursingEmpty').textContent = '불러오지 못했습니다.';
         });
     }
 
+    var nursingSearchDebounceTimer = null;
     document.getElementById('nursingSearchInput').addEventListener('input', function () {
       nursingSearchKeyword = this.value.trim();
-      loadNursingPage(1);
+      clearTimeout(nursingSearchDebounceTimer);
+      nursingSearchDebounceTimer = setTimeout(function () {
+        loadNursingPage(1);
+      }, 250);
     });
 
     function renderNursingPagination(totalCount, page) {
