@@ -43,7 +43,8 @@
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 12px;
-    padding: 6px 3px;
+    padding: 3px 3px;
+    line-height: 1.2;
   }
   #table td:last-child {
     overflow: visible;
@@ -172,6 +173,8 @@
   table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; }
   th, td { padding: 10px 12px; font-size: 13px; text-align: left; border-bottom: 1px solid #eee; }
   th { background: #FAF9F5; color: #666; }
+  /* 보유약품 목록(#table)은 한 줄에 최대한 많은 행이 보이도록 행 높이를 최소로 줄입니다. */
+  #table th, #table td { padding: 3px 6px; line-height: 1.2; }
   .dday-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(183,121,31,0.12); color: #B7791F; font-size: 12px; font-weight: 600; }
   .dday-badge.expired { background: #DC2626; color: #fff; font-weight: 700; }
   #empty { font-size: 13px; color: #999; margin-top: 12px; text-align: center; }
@@ -2245,6 +2248,6 @@
       document.getElementById('backupLink').style.display = 'inline';
     }
   </script>
-  <div id="versionTag">v2026-09-29-9</div>
+  <div id="versionTag">v2026-09-29-10</div>
 </body>
 </html>
