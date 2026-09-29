@@ -1324,6 +1324,83 @@
     var tempChartInstance = null;
 
     document.getElementById('tempChartBtn').addEventListener('click', function () {
+      var childName = nursingSearchKeyword;
+      if (!childName) return;
+
+      fetch(GAS_URL + '?action=childTemperatureToday&childName=' + encodeURIComponent(childName))
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          renderTempChart(childName, (data && data.points) ? data.points : []);
+        })
+        .catch(function () {
+          renderTempChart(childName, []);
+        });
+    });
+
+    function renderTempChart(childName, points) {
+      var modal = document.getElementById('tempChartModal');
+      var emptyMsg = document.getElementById('tempChartEmptyMsg');
+      var canvas = document.getElementById('tempChartCanvas');
+
+      document.getElementById('tempChartTitle').textContent = childName + ' - 오늘 체온 변화';
+      modal.style.display = 'flex';
+
+      if (tempChartInstance) {
+        tempChartInstance.destroy();
+        tempChartInstance = null;
+      }
+
+      if (!points || points.length === 0) {
+        canvas.style.display = 'none';
+        emptyMsg.style.display = 'block';
+        return;
+      }
+      canvas.style.display = 'block';
+      emptyMsg.style.display = 'none';
+
+      var labels = points.map(function (p) { return p.time; });
+      var temps = points.map(function (p) { return p.temp; });
+      var pointColors = temps.map(function (t) { return t >= 37.5 ? '#DC2626' : '#0F9488'; });
+
+      tempChartInstance = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '체온(℃)',
+              data: temps,
+              borderColor: '#0F9488',
+              borderWidth: 2,
+              pointBackgroundColor: pointColors,
+              pointRadius: 5,
+              tension: 0.2
+            },
+            {
+              label: '발열 기준(37.5℃)',
+              data: labels.map(function () { return 37.5; }),
+              borderColor: '#DC2626',
+              borderWidth: 1,
+              borderDash: [6, 4],
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: true } },
+          scales: { y: { min: 35, max: 40 } }
+        }
+      });
+    }
+
+    document.getElementById('tempChartCloseBtn').addEventListener('click', function () {
+      document.getElementById('tempChartModal').style.display = 'none';
+    });
+
+    var tempChartInstance = null;
+
+    document.getElementById('tempChartBtn').addEventListener('click', function () {
       if (!nursingSearchKeyword) return;
       fetch(GAS_URL + '?action=childTemperatureToday&childName=' + encodeURIComponent(nursingSearchKeyword))
         .then(function (res) { return res.json(); })
