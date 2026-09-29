@@ -172,6 +172,20 @@
   .fever-chip.fever-high { border-color: #DC2626; background: #FEF2F2; color: #B91C1C; }
   .fever-chip .fever-chip-temp { font-weight: 700; }
   .fever-check-empty { font-size: 12px; color: #999; padding: 8px 2px; }
+  /* 체온 측정 칩 목록 위, 날짜를 앞뒤로 이동할 수 있는 영역 */
+  .fever-check-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .fever-date-nav { display: flex; align-items: center; gap: 6px; }
+  .fever-nav-btn {
+    width: 26px; height: 26px; border-radius: 50%; border: 1px solid #ddd; background: #fff;
+    color: #2F6F5E; font-size: 14px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0; font-family: inherit; -webkit-appearance: none; appearance: none;
+  }
+  .fever-nav-btn:disabled { opacity: 0.35; cursor: default; }
+  .fever-date-label { font-size: 12px; font-weight: 700; color: #1F2A24; min-width: 86px; text-align: center; white-space: nowrap; }
+  .fever-today-btn {
+    font-size: 11px; font-weight: 600; color: #2F6F5E; background: #EAF2EE; border: none;
+    border-radius: 999px; padding: 4px 10px; cursor: pointer; font-family: inherit; white-space: nowrap;
+  }
   /* "최근 보건일지" 제목과 "새 일지 작성" 버튼을 한 줄 양 끝에 배치합니다 */
   .nursing-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 10px; flex-wrap: wrap; }
   .nursing-list-header h2 { flex-shrink: 0; white-space: nowrap; }
@@ -587,7 +601,15 @@
         </div>
 
         <div class="fever-check-section" id="feverCheckSection" style="display:none;">
-          <div class="fever-check-title">🌡 오늘 체온 측정</div>
+          <div class="fever-check-header">
+            <div class="fever-check-title">🌡 체온 측정</div>
+            <div class="fever-date-nav">
+              <button type="button" class="fever-nav-btn" id="feverPrevBtn" aria-label="이전 날짜">‹</button>
+              <span class="fever-date-label" id="feverDateLabel">오늘</span>
+              <button type="button" class="fever-nav-btn" id="feverNextBtn" aria-label="다음 날짜">›</button>
+              <button type="button" class="fever-today-btn" id="feverTodayBtn" style="display:none;">오늘</button>
+            </div>
+          </div>
           <div class="fever-chip-row" id="feverChipRow"></div>
         </div>
 
@@ -1368,20 +1390,57 @@
 
     var tempChartInstance = null;
 
-    // 이름검색과 별개로, "오늘 체온 측정" 칩을 눌렀을 때 그 아이의 그래프를 엽니다.
+    // 체온 측정 칩 목록에서 지금 보고 있는 날짜 (자정 기준으로 맞춰둡니다)
+    var feverSelectedDate = new Date();
+    feverSelectedDate.setHours(0, 0, 0, 0);
+
+    function feverToDateStr(date) {
+      var y = date.getFullYear();
+      var m = String(date.getMonth() + 1).padStart(2, '0');
+      var d = String(date.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + d;
+    }
+
+    // 오늘/어제/그제는 말로, 그보다 이전 날짜는 "9월 25일"처럼 보여줍니다.
+    function feverDateWord(date) {
+      var today = new Date(); today.setHours(0, 0, 0, 0);
+      var d = new Date(date); d.setHours(0, 0, 0, 0);
+      var diffDays = Math.round((today - d) / 86400000);
+      if (diffDays === 0) return '오늘';
+      if (diffDays === 1) return '어제';
+      if (diffDays === 2) return '그제';
+      return (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+    }
+
+    function feverDateLabel(date) {
+      var mdStr = (date.getMonth() + 1) + '월 ' + date.getDate() + '일';
+      var word = feverDateWord(date);
+      return (word === mdStr) ? mdStr : (mdStr + ' (' + word + ')');
+    }
+
+    function updateFeverNavUI() {
+      var today = new Date(); today.setHours(0, 0, 0, 0);
+      var isToday = feverSelectedDate.getTime() === today.getTime();
+      document.getElementById('feverDateLabel').textContent = feverDateLabel(feverSelectedDate);
+      document.getElementById('feverNextBtn').disabled = isToday;
+      document.getElementById('feverTodayBtn').style.display = isToday ? 'none' : 'inline-flex';
+    }
+
+    // 이름검색과 별개로, 체온 측정 칩을 눌렀을 때 그 아이의 그래프를 엽니다. (지금 보고 있는 날짜 기준)
     function openTempChartFor(childName) {
       if (!childName) return;
-      fetch(GAS_URL + '?action=childTemperatureToday&childName=' + encodeURIComponent(childName) + '&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
+      var chartDate = new Date(feverSelectedDate);
+      fetch(GAS_URL + '?action=childTemperatureToday&childName=' + encodeURIComponent(childName) + '&date=' + feverToDateStr(chartDate) + '&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
         .then(function (res) { return res.json(); })
         .then(function (data) {
-          renderTempChart(childName, (data && data.points) ? data.points : []);
+          renderTempChart(childName, (data && data.points) ? data.points : [], chartDate);
         })
         .catch(function () {
-          renderTempChart(childName, []);
+          renderTempChart(childName, [], chartDate);
         });
     }
 
-    // 오늘 체온이 기록된 아이들을 칩으로 보여줍니다. 열이 있는 아이(37.5℃ 이상)가 먼저 보이도록
+    // 선택한 날짜에 체온이 기록된 아이들을 칩으로 보여줍니다. 열이 있는 아이(37.5℃ 이상)가 먼저 보이도록
     // 서버에서 이미 정렬해서 줍니다.
     function renderFeverChips(children) {
       var section = document.getElementById('feverCheckSection');
@@ -1392,7 +1451,7 @@
       if (!children || children.length === 0) {
         var emptyEl = document.createElement('div');
         emptyEl.className = 'fever-check-empty';
-        emptyEl.textContent = '오늘 등록된 체온 기록이 없어요.';
+        emptyEl.textContent = feverDateWord(feverSelectedDate) + ' 등록된 체온 기록이 없어요.';
         row.appendChild(emptyEl);
         return;
       }
@@ -1407,21 +1466,49 @@
       });
     }
 
-    var feverChipsPromise = fetch(GAS_URL + '?action=todayTemperatureChildren&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        renderFeverChips((data && data.ok) ? data.children : []);
-      })
-      .catch(function () {
-        renderFeverChips([]);
-      });
+    // 지정한 날짜의 체온 측정 칩을 불러와 그립니다. 날짜 이동 버튼들이 이 함수를 재사용합니다.
+    function loadFeverChips(date) {
+      feverSelectedDate = date;
+      updateFeverNavUI();
+      var row = document.getElementById('feverChipRow');
+      document.getElementById('feverCheckSection').style.display = 'block';
+      row.innerHTML = '<div class="fever-check-empty">불러오는 중...</div>';
+      return fetch(GAS_URL + '?action=todayTemperatureChildren&date=' + feverToDateStr(date) + '&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          renderFeverChips((data && data.ok) ? data.children : []);
+        })
+        .catch(function () {
+          renderFeverChips([]);
+        });
+    }
 
-    function renderTempChart(childName, points) {
+    var feverChipsPromise = loadFeverChips(feverSelectedDate);
+
+    document.getElementById('feverPrevBtn').addEventListener('click', function () {
+      var d = new Date(feverSelectedDate);
+      d.setDate(d.getDate() - 1);
+      loadFeverChips(d);
+    });
+    document.getElementById('feverNextBtn').addEventListener('click', function () {
+      if (this.disabled) return;
+      var d = new Date(feverSelectedDate);
+      d.setDate(d.getDate() + 1);
+      loadFeverChips(d);
+    });
+    document.getElementById('feverTodayBtn').addEventListener('click', function () {
+      var d = new Date(); d.setHours(0, 0, 0, 0);
+      loadFeverChips(d);
+    });
+
+    function renderTempChart(childName, points, chartDate) {
       var modal = document.getElementById('tempChartModal');
       var emptyMsg = document.getElementById('tempChartEmptyMsg');
       var canvas = document.getElementById('tempChartCanvas');
+      var dateWord = feverDateWord(chartDate || feverSelectedDate);
 
-      document.getElementById('tempChartTitle').textContent = childName + ' - 오늘 체온 변화';
+      document.getElementById('tempChartTitle').textContent = childName + ' - ' + dateWord + ' 체온 변화';
+      emptyMsg.textContent = dateWord + ' 등록된 체온 기록이 없습니다.';
       modal.style.display = 'flex';
 
       if (tempChartInstance) {
