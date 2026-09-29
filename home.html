@@ -431,12 +431,16 @@
         if (fParts.length) html += (html ? ' · ' : '') + fParts.join(' · ');
       }
 
-      if (aData && aData.ok && aData.active && aData.active.length) {
-        var alarmTexts = aData.active.map(function (a) {
-          var itemLabel = a.itemCode === 'PM25' ? '초미세먼지' : '미세먼지';
-          return itemLabel + ' ' + a.issueGbn + ' 발령중(' + a.issueDate + ' ' + a.issueTime + '~)';
-        });
-        html += (html ? ' · ' : '') + '<span style="color:#EF4444; font-weight:700;">⚠ ' + alarmTexts.join(', ') + '</span>';
+      if (aData && aData.ok) {
+        if (aData.active && aData.active.length) {
+          var alarmTexts = aData.active.map(function (a) {
+            var itemLabel = a.itemCode === 'PM25' ? '초미세먼지' : '미세먼지';
+            return itemLabel + ' ' + a.issueGbn + ' 발령중(' + a.issueDate + ' ' + a.issueTime + '~)';
+          });
+          html += (html ? ' · ' : '') + '<span style="color:#EF4444; font-weight:700;">⚠ ' + alarmTexts.join(', ') + '</span>';
+        } else {
+          html += (html ? ' · ' : '') + '<span style="color:#999;">발령된 경보 없음</span>';
+        }
       }
 
       widgetEl.innerHTML = html || '정보를 가져오지 못했습니다.';
