@@ -1303,10 +1303,78 @@
     var nursingSearchDebounceTimer = null;
     document.getElementById('nursingSearchInput').addEventListener('input', function () {
       nursingSearchKeyword = this.value.trim();
+      document.getElementById('tempChartBtn').style.display = nursingSearchKeyword ? 'inline-block' : 'none';
       clearTimeout(nursingSearchDebounceTimer);
       nursingSearchDebounceTimer = setTimeout(function () {
         loadNursingPage(1);
       }, 250);
+    });
+
+    var tempChartInstance = null;
+
+    document.getElementById('tempChartBtn').addEventListener('click', function () {
+      if (!nursingSearchKeyword) return;
+      fetch(GAS_URL + '?action=childTemperatureToday&childName=' + encodeURIComponent(nursingSearchKeyword))
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (!data.ok) { alert('체온 데이터를 가져오지 못했습니다.'); return; }
+          if (!data.points || data.points.length === 0) {
+            alert(nursingSearchKeyword + ' 아이의 오늘 체온 기록이 없습니다.');
+            return;
+          }
+          renderTempChart(nursingSearchKeyword, data.points);
+        })
+        .catch(function () { alert('네트워크 오류로 불러오지 못했습니다.'); });
+    });
+
+    function renderTempChart(childName, points) {
+      document.getElementById('tempChartModalTitle').textContent = childName + ' 오늘 체온 추이';
+      document.getElementById('tempChartModal').style.display = 'flex';
+
+      var labels = points.map(function (p) { return p.time; });
+      var temps = points.map(function (p) { return p.temp; });
+      var pointColors = temps.map(function (t) { return t >= 37.5 ? '#DC2626' : '#2F6F5E'; });
+
+      if (tempChartInstance) tempChartInstance.destroy();
+      tempChartInstance = new Chart(document.getElementById('tempChartCanvas'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '체온(℃)',
+              data: temps,
+              borderColor: '#2F6F5E',
+              backgroundColor: '#2F6F5E',
+              borderWidth: 2,
+              pointBackgroundColor: pointColors,
+              pointBorderColor: pointColors,
+              pointRadius: 5,
+              tension: 0
+            },
+            {
+              label: '발열 기준(37.5℃)',
+              data: labels.map(function () { return 37.5; }),
+              borderColor: '#999',
+              borderDash: [4, 4],
+              borderWidth: 1,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: true, position: 'bottom' } },
+          scales: {
+            y: { suggestedMin: 36, suggestedMax: 39, title: { display: true, text: '℃' } }
+          }
+        }
+      });
+    }
+
+    document.getElementById('tempChartCloseBtn').addEventListener('click', function () {
+      document.getElementById('tempChartModal').style.display = 'none';
     });
 
     function renderNursingPagination(totalCount, page) {
