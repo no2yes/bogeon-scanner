@@ -160,6 +160,18 @@
   }
   .quick-stat-num { font-size: 22px; font-weight: 800; color: #2F6F5E; }
   .quick-stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+  /* 오늘 체온 측정한 아이들을 칩으로 보여주는 영역 — 이름검색 없이 바로 눌러서 그래프를 봅니다 */
+  .fever-check-section { margin-bottom: 14px; }
+  .fever-check-title { font-size: 13px; font-weight: 700; color: #1F2A24; margin-bottom: 6px; }
+  .fever-chip-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+  .fever-chip {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 6px;
+    padding: 8px 12px; border-radius: 999px; border: 1px solid #eee; background: #fff;
+    font-size: 13px; color: #1F2A24; cursor: pointer; white-space: nowrap; font-family: inherit;
+  }
+  .fever-chip.fever-high { border-color: #DC2626; background: #FEF2F2; color: #B91C1C; }
+  .fever-chip .fever-chip-temp { font-weight: 700; }
+  .fever-check-empty { font-size: 12px; color: #999; padding: 8px 2px; }
   /* "최근 보건일지" 제목과 "새 일지 작성" 버튼을 한 줄 양 끝에 배치합니다 */
   .nursing-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 10px; flex-wrap: wrap; }
   .nursing-list-header h2 { flex-shrink: 0; white-space: nowrap; }
@@ -574,11 +586,15 @@
           </div>
         </div>
 
+        <div class="fever-check-section" id="feverCheckSection" style="display:none;">
+          <div class="fever-check-title">🌡 오늘 체온 측정</div>
+          <div class="fever-chip-row" id="feverChipRow"></div>
+        </div>
+
         <div class="nursing-list-header">
           <h2 style="margin:0;">최근 보건일지</h2>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                   <input type="text" id="nursingSearchInput" placeholder="이름 검색" style="width:70px;">
-      <button type="button" id="tempChartBtn" style="display:none;" title="체온그래프">🌡</button>
             <label style="display:flex; align-items:center; gap:4px; font-size:12px; color:#666; cursor:pointer; white-space:nowrap;">
               <input type="checkbox" id="nursingSelectAllCb"> 전체선택
             </label>
@@ -1344,7 +1360,6 @@
     var nursingSearchDebounceTimer = null;
     document.getElementById('nursingSearchInput').addEventListener('input', function () {
       nursingSearchKeyword = this.value.trim();
-      document.getElementById('tempChartBtn').style.display = nursingSearchKeyword ? 'inline-block' : 'none';
       clearTimeout(nursingSearchDebounceTimer);
       nursingSearchDebounceTimer = setTimeout(function () {
         loadNursingPage(1);
@@ -1353,15 +1368,9 @@
 
     var tempChartInstance = null;
 
-    document.getElementById('tempChartBtn').addEventListener('click', function () {
-      var childName = nursingSearchKeyword;
+    // 이름검색과 별개로, "오늘 체온 측정" 칩을 눌렀을 때 그 아이의 그래프를 엽니다.
+    function openTempChartFor(childName) {
       if (!childName) return;
-
-      var tempBtnEl = this;
-      tempBtnEl.style.transition = 'transform 0.3s ease';
-      tempBtnEl.style.transform = 'scale(1.4) translateY(-6px)';
-      setTimeout(function () { tempBtnEl.style.transform = 'scale(1) translateY(0)'; }, 300);
-
       fetch(GAS_URL + '?action=childTemperatureToday&childName=' + encodeURIComponent(childName) + '&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
         .then(function (res) { return res.json(); })
         .then(function (data) {
@@ -1370,7 +1379,42 @@
         .catch(function () {
           renderTempChart(childName, []);
         });
-    });
+    }
+
+    // 오늘 체온이 기록된 아이들을 칩으로 보여줍니다. 열이 있는 아이(37.5℃ 이상)가 먼저 보이도록
+    // 서버에서 이미 정렬해서 줍니다.
+    function renderFeverChips(children) {
+      var section = document.getElementById('feverCheckSection');
+      var row = document.getElementById('feverChipRow');
+      row.innerHTML = '';
+      section.style.display = 'block';
+
+      if (!children || children.length === 0) {
+        var emptyEl = document.createElement('div');
+        emptyEl.className = 'fever-check-empty';
+        emptyEl.textContent = '오늘 등록된 체온 기록이 없어요.';
+        row.appendChild(emptyEl);
+        return;
+      }
+
+      children.forEach(function (c) {
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'fever-chip' + (c.hasFever ? ' fever-high' : '');
+        chip.innerHTML = '<span>' + c.childName + '</span><span class="fever-chip-temp">' + Number(c.maxTemp).toFixed(1) + '℃</span>';
+        chip.addEventListener('click', function () { openTempChartFor(c.childName); });
+        row.appendChild(chip);
+      });
+    }
+
+    var feverChipsPromise = fetch(GAS_URL + '?action=todayTemperatureChildren&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        renderFeverChips((data && data.ok) ? data.children : []);
+      })
+      .catch(function () {
+        renderFeverChips([]);
+      });
 
     function renderTempChart(childName, points) {
       var modal = document.getElementById('tempChartModal');
@@ -2043,7 +2087,7 @@
     }
 
     // 통계 카드·목록·보건일지 목록을 모두 불러오면(또는 실패해도) 첫 로딩 화면을 걷습니다.
-    Promise.all([nursingListPromise, statsPromise, medListPromise, initialSessionCheckPromise]).then(function () {
+    Promise.all([nursingListPromise, statsPromise, medListPromise, initialSessionCheckPromise, feverChipsPromise]).then(function () {
       document.getElementById('pageLoadingOverlay').style.display = 'none';
     });
 
