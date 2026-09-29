@@ -407,30 +407,40 @@
       var widgetEl = document.getElementById('airQualityWidget');
       widgetEl.textContent = '불러오는 중...';
 
-      Promise.all([
-        fetch(base + '?action=airQuality&token=' + encodeURIComponent(token)).then(function (res) { return res.json(); }).catch(function () { return null; }),
-        fetch(base + '?action=airForecast&token=' + encodeURIComponent(token)).then(function (res) { return res.json(); }).catch(function () { return null; })
-      ]).then(function (results) {
-        var qData = results[0];
-        var fData = results[1];
-        var html = '';
+          Promise.all([
+      fetch(base + '?action=airQuality&token=' + encodeURIComponent(token)).then(function (res) { return res.json(); }).catch(function () { return null; }),
+      fetch(base + '?action=airForecast&token=' + encodeURIComponent(token)).then(function (res) { return res.json(); }).catch(function () { return null; }),
+      fetch(base + '?action=airAlarm&token=' + encodeURIComponent(token)).then(function (res) { return res.json(); }).catch(function () { return null; })
+    ]).then(function (results) {
+      var qData = results[0];
+      var fData = results[1];
+      var aData = results[2];
+      var html = '';
 
-        if (qData && qData.ok && qData.station) {
-          var s = qData.station;
-          html += s.stationName + ' · ' + part('미세먼지', s.pm10Value, s.pm10Grade) +
-            ' · ' + part('초미세먼지', s.pm25Value, s.pm25Grade) +
-            ' · ' + part('오존', s.o3Value, s.o3Grade);
-        }
+      if (qData && qData.ok && qData.station) {
+        var s = qData.station;
+        html += s.stationName + ' · ' + part('미세먼지', s.pm10Value, s.pm10Grade) +
+          ' · ' + part('초미세먼지', s.pm25Value, s.pm25Grade) +
+          ' · ' + part('오존', s.o3Value, s.o3Grade);
+      }
 
-        if (fData && fData.ok && (fData.pm10 || fData.pm25)) {
-          var fParts = [];
-          if (fData.pm10 && fData.pm10.grade) fParts.push(part('미세먼지 예보', '', fData.pm10.grade));
-          if (fData.pm25 && fData.pm25.grade) fParts.push(part('초미세먼지 예보', '', fData.pm25.grade));
-          if (fParts.length) html += (html ? ' · ' : '') + fParts.join(' · ');
-        }
+      if (fData && fData.ok && (fData.pm10 || fData.pm25)) {
+        var fParts = [];
+        if (fData.pm10 && fData.pm10.grade) fParts.push(part('미세먼지 예보', '', fData.pm10.grade));
+        if (fData.pm25 && fData.pm25.grade) fParts.push(part('초미세먼지 예보', '', fData.pm25.grade));
+        if (fParts.length) html += (html ? ' · ' : '') + fParts.join(' · ');
+      }
 
-        widgetEl.innerHTML = html || '정보를 가져오지 못했습니다.';
-      });
+      if (aData && aData.ok && aData.active && aData.active.length) {
+        var alarmTexts = aData.active.map(function (a) {
+          var itemLabel = a.itemCode === 'PM25' ? '초미세먼지' : '미세먼지';
+          return itemLabel + ' ' + a.issueGbn + ' 발령중(' + a.issueDate + ' ' + a.issueTime + '~)';
+        });
+        html += (html ? ' · ' : '') + '<span style="color:#EF4444; font-weight:700;">⚠ ' + alarmTexts.join(', ') + '</span>';
+      }
+
+      widgetEl.innerHTML = html || '정보를 가져오지 못했습니다.';
+    });
     }
 
     function scheduleRefreshAt(hour, minute) {
