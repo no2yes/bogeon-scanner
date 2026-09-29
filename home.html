@@ -1327,6 +1327,11 @@
       var childName = nursingSearchKeyword;
       if (!childName) return;
 
+      var tempBtnEl = this;
+      tempBtnEl.style.transition = 'transform 0.3s ease';
+      tempBtnEl.style.transform = 'scale(1.4) translateY(-6px)';
+      setTimeout(function () { tempBtnEl.style.transform = 'scale(1) translateY(0)'; }, 300);
+
       fetch(GAS_URL + '?action=childTemperatureToday&childName=' + encodeURIComponent(childName))
         .then(function (res) { return res.json(); })
         .then(function (data) {
@@ -2430,6 +2435,6 @@
       document.getElementById('backupLink').style.display = 'inline';
     }
   </script>
-  <div id="versionTag">v2026-09-29-14</div>
+  <div id="versionTag">v2026-09-29-15</div>
 </body>
 </html>
