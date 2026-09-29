@@ -1044,6 +1044,14 @@
     </div>
   </div>
 
+  <div id="medDetailModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;">
+    <div style="background:#fff; border-radius:12px; padding:18px; width:min(420px, 92vw); max-height:88vh; overflow-y:auto; position:relative; box-sizing:border-box;">
+      <button type="button" id="medDetailCloseBtn" style="position:absolute; top:10px; right:14px; border:none; background:none; font-size:20px; cursor:pointer; line-height:1;">✕</button>
+      <h3 id="medDetailTitle" style="margin:0 24px 12px 0; font-size:16px; word-break:break-all;"></h3>
+      <div id="medDetailBody"></div>
+    </div>
+  </div>
+
   <div id="feedbackLoadingOverlay">
     <div class="big-spinner"></div>
     <div class="loading-text">전송 중이에요...</div>
@@ -1428,6 +1436,10 @@
       document.getElementById('tempChartModal').style.display = 'none';
     });
 
+    document.getElementById('medDetailCloseBtn').addEventListener('click', function () {
+      document.getElementById('medDetailModal').style.display = 'none';
+    });
+
     var tempChartInstance = null;
 
 
@@ -1715,9 +1727,6 @@
       }
       emptyEl.style.display = 'none';
 
-      var openDetailTr = null;
-      var openGroupArrow = null;
-
       groups.forEach(function (group) {
         var isExpired = group.dday !== null && group.dday < 0;
         var isSoon = group.dday !== null && group.dday >= 0 && group.dday <= 30;
@@ -1783,17 +1792,11 @@
             });
         });
 
-        // 펼침 줄: 등록 건 구분 없이, 수량만큼 삭제할 개수를 숫자로 입력받습니다.
-        var detailTr = document.createElement('tr');
-        detailTr.className = 'med-detail-row';
-        detailTr.style.display = 'none';
-        var detailTd = document.createElement('td');
-        detailTd.colSpan = 5;
-        detailTd.style.padding = '0';
-        detailTr.appendChild(detailTd);
+        // 상세 내용(등록 건 구분 없이 수량만큼 삭제할 개수를 입력받는 영역)은
+        // 이제 줄 안에 펼치지 않고, 클릭 시 모달창(medDetailModal)에 넣어서 보여줍니다.
 
         var detailBox = document.createElement('div');
-        detailBox.style.cssText = 'background:#FAF9F5; padding:10px 14px; border-top:1px dashed #ddd; border-bottom:1px dashed #ddd;';
+        detailBox.style.cssText = 'padding:0;';
 
         var itemsListBox = document.createElement('div');
         itemsListBox.style.cssText = 'display:flex; flex-direction:column; gap:6px; margin-bottom:8px;';
@@ -1992,30 +1995,16 @@
             });
         });
 
-        detailTd.appendChild(detailBox);
-
         groupTr.addEventListener('click', function () {
-          var isOpen = detailTr.style.display === 'table-row';
-
-          if (openDetailTr && openDetailTr !== detailTr) {
-            openDetailTr.style.display = 'none';
-            if (openGroupArrow) openGroupArrow.textContent = '▶';
-          }
-
-          detailTr.style.display = isOpen ? 'none' : 'table-row';
-          groupTr.querySelector('.group-arrow').textContent = isOpen ? '▶' : '▼';
-
-          if (isOpen) {
-            openDetailTr = null;
-            openGroupArrow = null;
-          } else {
-            openDetailTr = detailTr;
-            openGroupArrow = groupTr.querySelector('.group-arrow');
-          }
+          document.getElementById('medDetailTitle').textContent =
+            group.name + (contentAmountText ? ' (' + contentAmountText + ')' : '');
+          var bodyEl = document.getElementById('medDetailBody');
+          bodyEl.innerHTML = '';
+          bodyEl.appendChild(detailBox);
+          document.getElementById('medDetailModal').style.display = 'flex';
         });
 
         tbody.appendChild(groupTr);
-        tbody.appendChild(detailTr);
       });
 
       tableEl.style.display = 'table';
