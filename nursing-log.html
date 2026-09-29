@@ -83,8 +83,7 @@
     <label for="visitTime">방문일시</label>
     <input type="text" id="visitTime" readonly>
 
-    <div class="field-row" style="margin-top: 14px;">
-      <div>
+     <div>
         <label for="childName">대상아동</label>
         <input type="text" id="childName" placeholder="예: 홍길동" tabindex="1">
       </div>
@@ -92,9 +91,16 @@
         <label for="author">작성자</label>
         <input type="text" id="author" tabindex="3">
       </div>
+    </div>
+
+    <div class="field-row" style="margin-top: 14px;">
       <div>
-        <label for="temperature">체온(선택, ℃)</label>
-        <input type="text" id="temperature" placeholder="예: 37.8" inputmode="decimal" tabindex="2">
+        <label for="tempLeft">좌측 체온(선택, ℃)</label>
+        <input type="text" id="tempLeft" placeholder="예: 37.8" inputmode="decimal">
+      </div>
+      <div>
+        <label for="tempRight">우측 체온(선택, ℃)</label>
+        <input type="text" id="tempRight" placeholder="예: 37.6" inputmode="decimal">
       </div>
     </div>
 
@@ -183,7 +189,8 @@
           childName: childNameInput.value.trim(),
           author: authorInput.value.trim(),
           rawText: rawTextInput.value.trim(),
-          temperature: document.getElementById('temperature').value.trim()
+          tempLeft: document.getElementById('tempLeft').value.trim(),
+          tempRight: document.getElementById('tempRight').value.trim()
         })
       })
         .then(function (res) { return res.json(); })
