@@ -65,10 +65,10 @@
 }
   .tab-btn.active { background: #2F6F5E; border-color: #2F6F5E; color: #fff; }
 
-  .stat-cards { display: flex; gap: 12px; margin-bottom: 20px; }
-  .stat-card { flex: 1; box-sizing: border-box; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 16px; }
-  .stat-label { font-size: 12px; color: #888; margin-bottom: 6px; }
-  .stat-value { font-size: 28px; font-weight: 700; }
+  .stat-cards { display: flex; gap: 12px; margin-bottom: 14px; }
+  .stat-card { flex: 1; box-sizing: border-box; background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 8px 12px; }
+  .stat-label { font-size: 12px; color: #888; margin-bottom: 3px; }
+  .stat-value { font-size: 20px; font-weight: 700; }
   .stat-value.warn { color: #B7791F; }
 
   .scan-btn {
@@ -79,16 +79,16 @@
   }
   /* 바코드 스캔 버튼 전용 — 탭 버튼과 확실히 구분되는 카드형 디자인 */
   .scan-card {
-    display: flex; align-items: center; gap: 14px;
-    width: 100%; box-sizing: border-box; padding: 16px 18px;
-    border-radius: 16px; border: none; cursor: pointer; text-align: left;
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; box-sizing: border-box; padding: 10px 14px;
+    border-radius: 14px; border: none; cursor: pointer; text-align: left;
     background: linear-gradient(135deg, #2F6F5E, #3B8B72);
-    color: #fff; margin-bottom: 20px; font-family: inherit;
+    color: #fff; margin-bottom: 14px; font-family: inherit;
     box-shadow: 0 4px 14px rgba(47,111,94,0.28);
     -webkit-appearance: none; appearance: none;
   }
   .scan-card .scan-icon {
-    flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px;
+    flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px;
     background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center;
   }
   .scan-card .scan-text { flex: 1; }
@@ -373,6 +373,7 @@
   </div>
 
   <h1>보건실 관리시스템 <span id="adminNameTag" style="font-size: 13px; font-weight: 500; color: #888;"></span>
+    <button type="button" id="qrOpenBtn" title="스마트폰으로 이 화면 바로 열기" style="font-size:16px; padding:4px 8px; border-radius:8px; border:1px solid #eee; background:#fff; color:#666; cursor:pointer; font-family:inherit; margin-left:6px; vertical-align:middle;">📱</button>
     <button type="button" id="logoutBtn" style="float:right; font-size:12px; padding:5px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; color:#666; cursor:pointer; font-family:inherit;">로그아웃</button>
   </h1>
   <div id="orgName" style="font-size:12px; font-weight:700; color:#2F6F5E; margin:-6px 0 10px;"></div>
@@ -889,7 +890,6 @@
           <button type="button" id="medNextBtn" style="padding:4px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; font-size:12px; cursor:pointer; -webkit-appearance:none; appearance:none;">다음 ›</button>
         </div>
 
-        <button type="button" id="qrOpenBtn">📱 스마트폰으로 이 화면 바로 열기</button>
       </div>
     </div>
 
