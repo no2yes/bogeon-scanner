@@ -1825,6 +1825,7 @@
       if (window.medListMinHeight > 0) return window.medListMinHeight;
 
       var probeTable = document.createElement('table');
+      probeTable.id = 'table';
       probeTable.className = tableEl.className;
       probeTable.style.cssText =
         'position:absolute; visibility:hidden; pointer-events:none; top:-9999px; left:-9999px; width:' + tableEl.clientWidth + 'px;';
