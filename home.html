@@ -440,9 +440,10 @@
         if (aData.active && aData.active.length) {
           var alarmTexts = aData.active.map(function (a) {
             var itemLabel = a.itemCode === 'PM25' ? '초미세먼지' : '미세먼지';
-            return itemLabel + ' ' + a.issueGbn + ' 발령중(' + a.issueDate + ' ' + a.issueTime + '~)';
+            var color = a.issueGbn === '경보' ? '#DC2626' : '#B7791F';
+            return '<span style="color:' + color + '; font-weight:700;">⚠ ' + itemLabel + ' ' + a.issueGbn + ' 발령중(' + a.issueDate + ' ' + a.issueTime + '~)</span>';
           });
-          html += (html ? ' · ' : '') + '<span style="color:#EF4444; font-weight:700;">⚠ ' + alarmTexts.join(', ') + '</span>';
+          html += (html ? ' · ' : '') + alarmTexts.join(' · ');
           maybeShowAirAlarmModal(aData.active);
         } else {
           html += (html ? ' · ' : '') + '<span style="color:#999;">발령된 경보 없음</span>';
@@ -474,6 +475,12 @@
       var todayKey = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
       var storageKey = 'airAlarmModalShown_' + todayKey;
       if (localStorage.getItem(storageKey) === signature) return;
+
+      var hasAlert = activeList.some(function (a) { return a.issueGbn === '경보'; });
+      var severityColor = hasAlert ? '#DC2626' : '#B7791F';
+      var titleEl = document.getElementById('airAlarmModalTitle');
+      titleEl.textContent = '미세먼지 ' + (hasAlert ? '경보' : '주의보') + ' 발령';
+      titleEl.style.color = severityColor;
 
       var text = buildAirAlarmBroadcastText(activeList);
       document.getElementById('airAlarmModalText').textContent = text;
@@ -513,7 +520,7 @@
   <div id="airAlarmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:950; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
     <div style="background:#fff; border-radius:20px; padding:32px 24px; max-width:420px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
       <div style="font-size:48px; margin-bottom:12px;">⚠️</div>
-      <div style="font-size:20px; font-weight:800; color:#DC2626; margin-bottom:14px;">미세먼지 경보 발령</div>
+      <div id="airAlarmModalTitle" style="font-size:20px; font-weight:800; color:#DC2626; margin-bottom:14px;">미세먼지 경보 발령</div>
       <div id="airAlarmModalText" style="font-size:17px; font-weight:600; color:#1F2A24; line-height:1.6; margin-bottom:22px;"></div>
       <div style="display:flex; gap:8px;">
         <button type="button" id="airAlarmModalCopyBtn" style="flex:1; padding:12px; border-radius:10px; border:1px solid #2F6F5E; background:#fff; color:#2F6F5E; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; -webkit-appearance:none; appearance:none;">📋 방송문구 복사</button>
