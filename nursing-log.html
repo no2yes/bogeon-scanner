@@ -71,6 +71,22 @@
   (function checkAuth(){
     if (!localStorage.getItem('authToken')) { location.href = 'index.html'; }
   })();
+  function checkSessionValid_() {
+    var token = localStorage.getItem('authToken');
+    if (!token) { location.href = 'index.html'; return; }
+    fetch('https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec?action=verifySession&token=' + encodeURIComponent(token))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data.ok) {
+          localStorage.removeItem('authToken');
+          alert('세션이 종료되어 다시 로그인이 필요합니다.');
+          location.href = 'index.html';
+        }
+      })
+      .catch(function () {});
+  }
+  checkSessionValid_();
+  setInterval(checkSessionValid_, 60000);
   </script>
   <a class="back-link" href="home.html">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>

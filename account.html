@@ -78,6 +78,22 @@
     throw new Error('not admin');
   }
 })();
+function checkSessionValid_() {
+  var svToken = localStorage.getItem('authToken');
+  if (!svToken) { location.href = 'index.html'; return; }
+  fetch('https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec?action=verifySession&token=' + encodeURIComponent(svToken))
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      if (!data.ok) {
+        localStorage.removeItem('authToken');
+        alert('세션이 종료되어 다시 로그인이 필요합니다.');
+        location.href = 'index.html';
+      }
+    })
+    .catch(function () {});
+}
+checkSessionValid_();
+setInterval(checkSessionValid_, 60000);
 </script>
 
 <a class="back-link" href="home.html">
