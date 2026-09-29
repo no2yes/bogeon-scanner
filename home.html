@@ -171,6 +171,16 @@
   }
   .fever-chip.fever-high { border-color: #DC2626; background: #FEF2F2; color: #B91C1C; }
   .fever-chip .fever-chip-temp { font-weight: 700; }
+  /* 칩을 눌러 그래프를 불러오는 동안, 칩 안에 작은 링 스피너를 보여줍니다 */
+  .fever-chip .fever-chip-spinner {
+    display: none; width: 13px; height: 13px; border-radius: 50%; flex: 0 0 auto;
+    border: 2px solid rgba(47,111,94,0.2); border-top-color: #2F6F5E;
+    animation: qr-btn-spin 0.7s linear infinite;
+  }
+  .fever-chip.fever-high .fever-chip-spinner { border-color: rgba(220,38,38,0.2); border-top-color: #DC2626; }
+  .fever-chip.fever-chip-loading { cursor: default; }
+  .fever-chip.fever-chip-loading .fever-chip-spinner { display: inline-block; }
+  .fever-chip.fever-chip-loading span:not(.fever-chip-spinner) { opacity: 0.45; }
   .fever-check-empty { font-size: 12px; color: #999; padding: 8px 2px; }
   /* 체온 측정 칩 목록 위, 날짜를 앞뒤로 이동할 수 있는 영역 */
   .fever-check-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
@@ -1452,16 +1462,18 @@
     }
 
     // 이름검색과 별개로, 체온 측정 칩을 눌렀을 때 그 아이의 그래프를 엽니다. (지금 보고 있는 날짜 기준)
-    function openTempChartFor(childName) {
-      if (!childName) return;
+    function openTempChartFor(childName, onDone) {
+      if (!childName) { if (onDone) onDone(); return; }
       var chartDate = new Date(feverSelectedDate);
       fetch(GAS_URL + '?action=childTemperatureToday&childName=' + encodeURIComponent(childName) + '&date=' + feverToDateStr(chartDate) + '&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
         .then(function (res) { return res.json(); })
         .then(function (data) {
           renderTempChart(childName, (data && data.points) ? data.points : [], chartDate);
+          if (onDone) onDone();
         })
         .catch(function () {
           renderTempChart(childName, [], chartDate);
+          if (onDone) onDone();
         });
     }
 
@@ -1485,8 +1497,16 @@
         var chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'fever-chip' + (c.hasFever ? ' fever-high' : '');
-        chip.innerHTML = '<span>' + c.childName + '</span><span class="fever-chip-temp">' + Number(c.maxTemp).toFixed(1) + '℃</span>';
-        chip.addEventListener('click', function () { openTempChartFor(c.childName); });
+        chip.innerHTML = '<span>' + c.childName + '</span><span class="fever-chip-temp">' + Number(c.maxTemp).toFixed(1) + '℃</span><span class="fever-chip-spinner"></span>';
+        chip.addEventListener('click', function () {
+          if (chip.classList.contains('fever-chip-loading')) return;
+          chip.classList.add('fever-chip-loading');
+          chip.disabled = true;
+          openTempChartFor(c.childName, function () {
+            chip.classList.remove('fever-chip-loading');
+            chip.disabled = false;
+          });
+        });
         row.appendChild(chip);
       });
     }
