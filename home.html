@@ -289,13 +289,27 @@
     font-size: 13px; border-radius: 999px; padding: 6px 14px; margin-bottom: 16px;
     text-align: center;
   }
-  #qrOpenBtn {
-    width: 100%; box-sizing: border-box; padding: 12px 16px; border-radius: 10px;
-    border: 1px solid #eee; background: #fff; font-size: 13px; color: #666;
+  /* 헤더의 "스마트폰으로 이 화면 바로 열기" 버튼 — 작은 원형 아이콘 버튼 */
+  .qr-open-btn {
+    display: inline-flex; align-items: center; justify-content: center; position: relative;
+    width: 32px; height: 32px; margin: 0 0 0 6px; padding: 0; vertical-align: middle;
+    border-radius: 50%; border: 1px solid #E4E1D6; background: #fff; color: #2F6F5E;
     cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none;
-    margin-top: 16px;
+    box-shadow: 0 1px 2px rgba(31,42,36,0.08);
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
   }
-  #qrOpenBtn.qr-btn-loading { animation: bigspin 0.8s linear infinite; }
+  .qr-open-btn svg { width: 17px; height: 17px; display: block; transition: opacity 0.15s ease; }
+  .qr-open-btn:hover { background: #EAF2EE; border-color: #2F6F5E; box-shadow: 0 2px 6px rgba(47,111,94,0.18); }
+  .qr-open-btn:active { transform: scale(0.93); }
+  .qr-open-btn:disabled { cursor: default; opacity: 0.5; }
+  .qr-open-btn .qr-btn-spinner {
+    display: none; position: absolute; inset: 6px; border-radius: 50%;
+    border: 2px solid rgba(47,111,94,0.15); border-top-color: #2F6F5E;
+    animation: qr-btn-spin 0.7s linear infinite;
+  }
+  .qr-open-btn.qr-btn-loading svg { opacity: 0.15; }
+  .qr-open-btn.qr-btn-loading .qr-btn-spinner { display: block; }
+  @keyframes qr-btn-spin { to { transform: rotate(360deg); } }
 
   #feedbackFab {
     position: fixed; right: 16px; bottom: 16px; z-index: 500;
@@ -421,7 +435,18 @@
   </div>
 
   <h1>보건실 관리시스템 <span id="adminNameTag" style="font-size: 13px; font-weight: 500; color: #888;"></span>
-    <button type="button" id="qrOpenBtn" title="스마트폰으로 이 화면 바로 열기" style="display:inline-block; width:auto; font-size:16px; padding:4px 8px; margin:0 0 0 6px; border-radius:8px; border:1px solid #eee; background:#fff; color:#666; cursor:pointer; font-family:inherit; vertical-align:middle;">📱</button>
+    <button type="button" id="qrOpenBtn" class="qr-open-btn" title="스마트폰으로 이 화면 바로 열기">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="14.5" y="14.5" width="2.6" height="2.6" rx="0.6" fill="currentColor"/>
+        <rect x="18.5" y="14.5" width="2.6" height="2.6" rx="0.6" fill="currentColor"/>
+        <rect x="14.5" y="18.5" width="2.6" height="2.6" rx="0.6" fill="currentColor"/>
+        <rect x="18.5" y="18.5" width="2.6" height="2.6" rx="0.6" fill="currentColor"/>
+      </svg>
+      <span class="qr-btn-spinner"></span>
+    </button>
     <button type="button" id="logoutBtn" style="float:right; font-size:12px; padding:5px 10px; border-radius:8px; border:1px solid #ccc; background:#fff; color:#666; cursor:pointer; font-family:inherit;">로그아웃</button>
   </h1>
   <div id="orgName" style="font-size:12px; font-weight:700; color:#2F6F5E; margin:-6px 0 10px;"></div>
@@ -2203,8 +2228,7 @@
       if (qrOpenBtnMobile) qrOpenBtnMobile.style.display = 'none';
     } else {
       var qrOpenBtn = document.getElementById('qrOpenBtn');
-      var qrOpenBtnOriginalText = qrOpenBtn.textContent;
-      qrOpenBtn.style.display = 'inline-block';
+      qrOpenBtn.style.display = 'inline-flex';
 
       qrOpenBtn.addEventListener('click', function () {
         qrOpenBtn.disabled = true;
