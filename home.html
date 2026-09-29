@@ -395,22 +395,38 @@
   (function loadAirQuality(){
     var token = localStorage.getItem('authToken');
     if (!token) return;
-    fetch('https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec?action=airQuality&token=' + encodeURIComponent(token))
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        if (!data || !data.ok || !data.station) return;
-        var gradeColor = { '좋음': '#3B82F6', '보통': '#22C55E', '나쁨': '#F59E0B', '매우나쁨': '#EF4444' };
-        function part(label, value, grade) {
-          var color = gradeColor[grade] || '#999';
-          return label + ' ' + (value || '–') + ' <span style="color:' + color + '; font-weight:700;">' + (grade || '') + '</span>';
-        }
-        var s = data.station;
-        document.getElementById('airQualityWidget').innerHTML =
-          s.stationName + ' · ' + part('미세먼지', s.pm10Value, s.pm10Grade) +
+    var base = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
+    var gradeColor = { '좋음': '#3B82F6', '보통': '#22C55E', '나쁨': '#F59E0B', '매우나쁨': '#EF4444' };
+    function part(label, value, grade) {
+      var color = gradeColor[grade] || '#999';
+      var valueText = value ? (value + ' ') : '';
+      return label + ' ' + valueText + '<span style="color:' + color + '; font-weight:700;">' + (grade || '') + '</span>';
+    }
+
+    Promise.all([
+      fetch(base + '?action=airQuality&token=' + encodeURIComponent(token)).then(function (res) { return res.json(); }).catch(function () { return null; }),
+      fetch(base + '?action=airForecast&token=' + encodeURIComponent(token)).then(function (res) { return res.json(); }).catch(function () { return null; })
+    ]).then(function (results) {
+      var qData = results[0];
+      var fData = results[1];
+      var html = '';
+
+      if (qData && qData.ok && qData.station) {
+        var s = qData.station;
+        html += s.stationName + ' · ' + part('미세먼지', s.pm10Value, s.pm10Grade) +
           ' · ' + part('초미세먼지', s.pm25Value, s.pm25Grade) +
           ' · ' + part('오존', s.o3Value, s.o3Grade);
-      })
-      .catch(function () {});
+      }
+
+      if (fData && fData.ok && (fData.pm10 || fData.pm25)) {
+        var fParts = [];
+        if (fData.pm10 && fData.pm10.grade) fParts.push(part('미세먼지 예보', '', fData.pm10.grade));
+        if (fData.pm25 && fData.pm25.grade) fParts.push(part('초미세먼지 예보', '', fData.pm25.grade));
+        if (fParts.length) html += (html ? ' · ' : '') + fParts.join(' · ');
+      }
+
+      document.getElementById('airQualityWidget').innerHTML = html;
+    });
   })();
   </script>
 
