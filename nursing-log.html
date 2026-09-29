@@ -92,6 +92,10 @@
         <label for="author">작성자</label>
         <input type="text" id="author" tabindex="3">
       </div>
+      <div>
+        <label for="temperature">체온(선택, ℃)</label>
+        <input type="text" id="temperature" placeholder="예: 37.8" inputmode="decimal" tabindex="2">
+      </div>
     </div>
 
     <label for="rawText" style="margin-top: 14px;">내용</label>
@@ -178,7 +182,8 @@
           visitDateTime: visitDateTimeStr,
           childName: childNameInput.value.trim(),
           author: authorInput.value.trim(),
-          rawText: rawTextInput.value.trim()
+          rawText: rawTextInput.value.trim(),
+          temperature: document.getElementById('temperature').value.trim()
         })
       })
         .then(function (res) { return res.json(); })
