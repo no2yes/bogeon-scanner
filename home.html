@@ -556,6 +556,7 @@
         <div class="nursing-list-header">
           <h2 style="margin:0;">최근 보건일지</h2>
           <div style="display:flex; align-items:center; gap:8px;">
+            <input type="text" id="nursingSearchInput" placeholder="이름 검색" style="padding:6px 8px; border-radius:8px; border:1px solid #ccc; font-size:12px; font-family:inherit; width:70px;">
             <label style="display:flex; align-items:center; gap:4px; font-size:12px; color:#666; cursor:pointer; white-space:nowrap;">
               <input type="checkbox" id="nursingSelectAllCb"> 전체선택
             </label>
@@ -1261,6 +1262,7 @@
     }
     var nursingCurrentPage = 1;
     var nursingPageSize = 9;
+    var nursingSearchKeyword = '';
 
     function loadNursingPage(page) {
       var nursingLoadingEl = document.getElementById('nursingListLoadingOverlay');
@@ -1268,7 +1270,7 @@
       document.getElementById('nursingPrevBtn').disabled = true;
       document.getElementById('nursingNextBtn').disabled = true;
 
-      return fetch(GAS_URL + '?action=nursingLogList&page=' + page)
+      return fetch(GAS_URL + '?action=nursingLogList&page=' + page + '&keyword=' + encodeURIComponent(nursingSearchKeyword))
         .then(function (res) { return res.json(); })
         .then(function (data) {
           // 삭제 등으로 이 페이지 항목이 전부 없어졌는데 1페이지가 아니라면,
@@ -1287,6 +1289,11 @@
           document.getElementById('nursingEmpty').textContent = '불러오지 못했습니다.';
         });
     }
+
+    document.getElementById('nursingSearchInput').addEventListener('input', function () {
+      nursingSearchKeyword = this.value.trim();
+      loadNursingPage(1);
+    });
 
     function renderNursingPagination(totalCount, page) {
       var totalPages = Math.max(1, Math.ceil(totalCount / nursingPageSize));
