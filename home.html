@@ -161,7 +161,8 @@
   .quick-stat-num { font-size: 22px; font-weight: 800; color: #2F6F5E; }
   .quick-stat-label { font-size: 11px; color: #888; margin-top: 2px; }
   /* "최근 보건일지" 제목과 "새 일지 작성" 버튼을 한 줄 양 끝에 배치합니다 */
-  .nursing-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 10px; }
+  .nursing-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 10px; flex-wrap: wrap; }
+  .nursing-list-header h2 { flex-shrink: 0; white-space: nowrap; }
   .write-log-btn {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 6px 12px; border-radius: 999px;
