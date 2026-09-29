@@ -339,14 +339,18 @@
 
       // 일평균 방문수는 주말·공휴일을 뺀 날짜 수로 나눕니다.
       // 공휴일은 홈 화면 달력에서 쓰는 것과 같은 API(date.nager.at)로 가져옵니다.
+      // 이번 달처럼 아직 끝나지 않은 달이면, 오늘까지의 근무일수만 셉니다. (지난 달은 자동으로 전체 일수가 적용됩니다.)
       fetch('https://date.nager.at/api/v3/PublicHolidays/' + range.year + '/KR')
         .then(function (res) { return res.json(); })
         .catch(function () { return []; })
         .then(function (holidays) {
           var holidaySet = new Set(holidays.map(function (h) { return h.date; }));
+          var today = new Date();
+          today.setHours(0, 0, 0, 0);
+          var effectiveEnd = today < range.endObj ? today : range.endObj;
           var workdays = 0;
           var d = new Date(range.startObj.getTime());
-          while (d <= range.endObj) {
+          while (d <= effectiveEnd) {
             var weekday = d.getDay(); // 0=일요일, 6=토요일
             var y = d.getFullYear(), m = d.getMonth() + 1, dd = d.getDate();
             var key = y + '-' + (m < 10 ? '0' + m : m) + '-' + (dd < 10 ? '0' + dd : dd);
