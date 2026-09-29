@@ -1400,20 +1400,7 @@
 
     var tempChartInstance = null;
 
-    document.getElementById('tempChartBtn').addEventListener('click', function () {
-      if (!nursingSearchKeyword) return;
-      fetch(GAS_URL + '?action=childTemperatureToday&childName=' + encodeURIComponent(nursingSearchKeyword))
-        .then(function (res) { return res.json(); })
-        .then(function (data) {
-          if (!data.ok) { alert('체온 데이터를 가져오지 못했습니다.'); return; }
-          if (!data.points || data.points.length === 0) {
-            alert(nursingSearchKeyword + ' 아이의 오늘 체온 기록이 없습니다.');
-            return;
-          }
-          renderTempChart(nursingSearchKeyword, data.points);
-        })
-        .catch(function () { alert('네트워크 오류로 불러오지 못했습니다.'); });
-    });
+
 
     function renderNursingPagination(totalCount, page) {
       var totalPages = Math.max(1, Math.ceil(totalCount / nursingPageSize));
