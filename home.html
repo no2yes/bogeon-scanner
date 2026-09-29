@@ -1733,7 +1733,7 @@
     var allMedGroups = [];
     var medSortMode = 'recent';
     var medCurrentPage = 1;
-    var medPageSize = 6;
+    var medPageSize = 8;
 
     var medListPromise = fetch(GAS_URL + '?action=medList&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
       .then(function (res) { return res.json(); })
