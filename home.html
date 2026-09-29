@@ -2065,7 +2065,12 @@
       document.getElementById('qrModal').style.display = 'none';
     });
 
-    if (!isMobileDevice) {
+    if (isMobileDevice) {
+      // 스마트폰에서는 QR을 스캔해서 열 대상이 자기 자신이라 의미가 없는 기능이라,
+      // 버튼 자체를 숨깁니다(눌러도 반응 없는 버튼처럼 보이는 걸 방지).
+      var qrOpenBtnMobile = document.getElementById('qrOpenBtn');
+      if (qrOpenBtnMobile) qrOpenBtnMobile.style.display = 'none';
+    } else {
       var qrOpenBtn = document.getElementById('qrOpenBtn');
       var qrOpenBtnOriginalText = qrOpenBtn.textContent;
       qrOpenBtn.style.display = 'inline-block';
