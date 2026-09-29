@@ -191,7 +191,7 @@
   #medSortSelect { padding:6px 10px; border-radius:8px; border:1px solid #ccc; font-size:12px; font-family:inherit; background:#fff; color:#555; }
 
   /* 보건일지 목록 */
-  .nursing-item { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 5px 10px; margin-bottom: 4px; cursor: pointer; }
+  .nursing-item { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 5px 10px; margin-bottom: 0; cursor: pointer; }
   .nursing-top { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
   .nursing-child { font-weight: 700; font-size: 14px; }
   .nursing-caretext { font-size: 12px; color: #666; }
@@ -1260,7 +1260,7 @@
       return height;
     }
     var nursingCurrentPage = 1;
-    var nursingPageSize = 8;
+    var nursingPageSize = 9;
 
     function loadNursingPage(page) {
       var nursingLoadingEl = document.getElementById('nursingListLoadingOverlay');
