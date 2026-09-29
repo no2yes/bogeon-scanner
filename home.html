@@ -1299,7 +1299,7 @@
       document.getElementById('nursingPrevBtn').disabled = true;
       document.getElementById('nursingNextBtn').disabled = true;
 
-      return fetch(GAS_URL + '?action=nursingLogList&page=' + page + '&keyword=' + encodeURIComponent(nursingSearchKeyword))
+      return fetch(GAS_URL + '?action=nursingLogList&page=' + page + '&keyword=' + encodeURIComponent(nursingSearchKeyword) + '&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
         .then(function (res) { return res.json(); })
         .then(function (data) {
           // 이 요청보다 더 최신 요청(예: 그 사이에 또 검색어를 바꿈)이 이미
@@ -1347,7 +1347,7 @@
       tempBtnEl.style.transform = 'scale(1.4) translateY(-6px)';
       setTimeout(function () { tempBtnEl.style.transform = 'scale(1) translateY(0)'; }, 300);
 
-      fetch(GAS_URL + '?action=childTemperatureToday&childName=' + encodeURIComponent(childName))
+      fetch(GAS_URL + '?action=childTemperatureToday&childName=' + encodeURIComponent(childName) + '&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
         .then(function (res) { return res.json(); })
         .then(function (data) {
           renderTempChart(childName, (data && data.points) ? data.points : []);
@@ -1451,7 +1451,7 @@
 
     // 오늘/이번 주/이번 달 방문건수를 불러와 카드에 채웁니다.
     function loadNursingQuickStats() {
-      fetch(GAS_URL + '?action=nursingQuickStats')
+      fetch(GAS_URL + '?action=nursingQuickStats&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
         .then(function (res) { return res.json(); })
         .then(function (stats) {
           document.getElementById('quickStatToday').textContent = stats.today;
@@ -1489,7 +1489,7 @@
       var calLoadingEl = document.getElementById('calendarLoadingOverlay');
       calLoadingEl.style.display = 'flex';
 
-      var countsPromise = fetch(GAS_URL + '?action=nursingLogCounts&year=' + year + '&month=' + month)
+      var countsPromise = fetch(GAS_URL + '?action=nursingLogCounts&year=' + year + '&month=' + month + '&token=' + encodeURIComponent(localStorage.getItem('authToken') || ''))
         .then(function (res) { return res.json(); })
         .catch(function () { return {}; });
 
