@@ -71,6 +71,15 @@
   (function checkAuth(){
     if (!localStorage.getItem('authToken')) { location.href = 'index.html'; }
   })();
+  // 17시가 되면 화면을 한 번 새로고침합니다. 새로고침되면 서버가 세션을
+  // 다시 확인하니까, 업무시간 세션이 만료된 경우 자연스럽게 로그인 화면으로 넘어갑니다.
+  (function () {
+    var now = new Date();
+    var target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 10, 0);
+    if (now < target) {
+      setTimeout(function () { location.reload(); }, target.getTime() - now.getTime());
+    }
+  })();
   function checkSessionValid_() {
     var token = localStorage.getItem('authToken');
     if (!token) { location.href = 'index.html'; return; }
