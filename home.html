@@ -443,6 +443,7 @@
             return itemLabel + ' ' + a.issueGbn + ' 발령중(' + a.issueDate + ' ' + a.issueTime + '~)';
           });
           html += (html ? ' · ' : '') + '<span style="color:#EF4444; font-weight:700;">⚠ ' + alarmTexts.join(', ') + '</span>';
+          maybeShowAirAlarmModal(aData.active);
         } else {
           html += (html ? ' · ' : '') + '<span style="color:#999;">발령된 경보 없음</span>';
         }
@@ -450,6 +451,46 @@
 
       widgetEl.innerHTML = html || '정보를 가져오지 못했습니다.';
     });
+    }
+
+    // 경보/주의보 방송용 간단 문구를 만듭니다.
+    function buildAirAlarmBroadcastText(activeList) {
+      var labels = activeList.map(function (a) {
+        var itemLabel = a.itemCode === 'PM25' ? '초미세먼지' : '미세먼지';
+        return itemLabel + ' ' + a.issueGbn;
+      });
+      var uniqueLabels = labels.filter(function (v, i) { return labels.indexOf(v) === i; });
+      return uniqueLabels.join(', ') + ' 발령 중입니다. 실외활동을 자제하고 외출 시 마스크를 착용해 주세요.';
+    }
+
+    // 경보가 있을 때 화면 정중앙에 크게 띄웁니다. 같은 경보 내용은 하루에 한 번만 뜨도록,
+    // 날짜+경보 서명을 localStorage에 저장해서 확인합니다.
+    function maybeShowAirAlarmModal(activeList) {
+      if (!activeList || !activeList.length) return;
+      var signature = activeList.map(function (a) { return a.itemCode + a.issueGbn + a.issueDate + a.issueTime; }).join('|');
+      var today = new Date();
+      var todayKey = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+      var storageKey = 'airAlarmModalShown_' + todayKey;
+      if (localStorage.getItem(storageKey) === signature) return;
+
+      var text = buildAirAlarmBroadcastText(activeList);
+      document.getElementById('airAlarmModalText').textContent = text;
+      document.getElementById('airAlarmModal').style.display = 'flex';
+
+      document.getElementById('airAlarmModalCloseBtn').onclick = function () {
+        localStorage.setItem(storageKey, signature);
+        document.getElementById('airAlarmModal').style.display = 'none';
+      };
+      document.getElementById('airAlarmModalCopyBtn').onclick = function () {
+        navigator.clipboard.writeText(text).then(function () {
+          var btn = document.getElementById('airAlarmModalCopyBtn');
+          var original = btn.textContent;
+          btn.textContent = '✅ 복사됨';
+          setTimeout(function () { btn.textContent = original; }, 1500);
+        }).catch(function () {
+          alert('복사에 실패했습니다. 문구를 길게 눌러 직접 복사해 주세요.');
+        });
+      };
     }
 
     function scheduleRefreshAt(hour, minute) {
@@ -465,6 +506,19 @@
     scheduleRefreshAt(12, 50);
   })();
   </script>
+
+  <!-- 미세먼지 경보/주의보 발령 시 화면 정중앙에 크게 띄우는 알림 -->
+  <div id="airAlarmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:950; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
+    <div style="background:#fff; border-radius:20px; padding:32px 24px; max-width:420px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+      <div style="font-size:48px; margin-bottom:12px;">⚠️</div>
+      <div style="font-size:20px; font-weight:800; color:#DC2626; margin-bottom:14px;">미세먼지 경보 발령</div>
+      <div id="airAlarmModalText" style="font-size:17px; font-weight:600; color:#1F2A24; line-height:1.6; margin-bottom:22px;"></div>
+      <div style="display:flex; gap:8px;">
+        <button type="button" id="airAlarmModalCopyBtn" style="flex:1; padding:12px; border-radius:10px; border:1px solid #2F6F5E; background:#fff; color:#2F6F5E; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; -webkit-appearance:none; appearance:none;">📋 방송문구 복사</button>
+        <button type="button" id="airAlarmModalCloseBtn" style="flex:1; padding:12px; border-radius:10px; border:none; background:#2F6F5E; color:#fff; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; -webkit-appearance:none; appearance:none;">확인했습니다</button>
+      </div>
+    </div>
+  </div>
 
   <div class="nursing-layout">
     <div class="nursing-left">
