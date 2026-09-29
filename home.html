@@ -1368,6 +1368,7 @@
       var temps = points.map(function (p) { return p.temp; });
       var pointColors = temps.map(function (t) { return t >= 37.5 ? '#DC2626' : '#0F9488'; });
 
+      requestAnimationFrame(function () {
       tempChartInstance = new Chart(canvas.getContext('2d'), {
         type: 'line',
         data: {
@@ -1397,6 +1398,7 @@
           plugins: { legend: { display: true } },
           scales: { y: { min: 35, max: 40 } }
         }
+      });
       });
     }
 
@@ -2436,6 +2438,6 @@
       document.getElementById('backupLink').style.display = 'inline';
     }
   </script>
-  <div id="versionTag">v2026-09-29-17</div>
+  <div id="versionTag">v2026-09-29-18</div>
 </body>
 </html>
