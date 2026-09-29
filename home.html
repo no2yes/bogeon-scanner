@@ -390,7 +390,7 @@
   })();
   </script>
 
-  <div id="airQualityWidget" style="display:flex; gap:8px; margin:0 0 12px; overflow-x:auto;"></div>
+  <div id="airQualityWidget" style="font-size:11px; color:#666; margin:0 0 10px; white-space:nowrap; overflow-x:auto;"></div>
   <script>
   (function loadAirQuality(){
     var token = localStorage.getItem('authToken');
@@ -398,24 +398,17 @@
     fetch('https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec?action=airQuality&token=' + encodeURIComponent(token))
       .then(function (res) { return res.json(); })
       .then(function (data) {
-        if (!data || !data.ok || !data.stations || !data.stations.length) return;
+        if (!data || !data.ok || !data.station) return;
         var gradeColor = { '좋음': '#3B82F6', '보통': '#22C55E', '나쁨': '#F59E0B', '매우나쁨': '#EF4444' };
-        function row(label, value, grade) {
+        function part(label, value, grade) {
           var color = gradeColor[grade] || '#999';
-          return '<div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; padding:1px 0;">' +
-            '<span style="color:#888;">' + label + '</span>' +
-            '<span><b>' + (value || '–') + '</b> <span style="color:' + color + '; font-weight:700;">' + (grade || '') + '</span></span>' +
-            '</div>';
+          return label + ' ' + (value || '–') + ' <span style="color:' + color + '; font-weight:700;">' + (grade || '') + '</span>';
         }
-        var html = data.stations.map(function (s) {
-          return '<div style="flex:1; min-width:100px; background:#fff; border:1px solid #eee; border-radius:10px; padding:8px 10px;">' +
-            '<div style="font-size:12px; font-weight:700; color:#333; margin-bottom:4px;">' + s.stationName + '</div>' +
-            row('미세먼지', s.pm10Value, s.pm10Grade) +
-            row('초미세먼지', s.pm25Value, s.pm25Grade) +
-            row('오존', s.o3Value, s.o3Grade) +
-            '</div>';
-        }).join('');
-        document.getElementById('airQualityWidget').innerHTML = html;
+        var s = data.station;
+        document.getElementById('airQualityWidget').innerHTML =
+          s.stationName + ' · ' + part('미세먼지', s.pm10Value, s.pm10Grade) +
+          ' · ' + part('초미세먼지', s.pm25Value, s.pm25Grade) +
+          ' · ' + part('오존', s.o3Value, s.o3Grade);
       })
       .catch(function () {});
   })();
