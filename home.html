@@ -316,9 +316,9 @@
 
   /* 보건일지 탭: 목록(왼쪽) + 이번달 달력(오른쪽). 화면이 좁으면 세로로 쌓입니다.
      align-items를 stretch로 둬서(기본값), 두 칼럼의 세로 높이가 서로 맞춰집니다. */
-  .nursing-layout { display: flex; gap: 20px; flex-wrap: wrap; align-items: stretch; }
-  .nursing-left { flex: 1 1 320px; min-width: 260px; }
-  .nursing-right { flex: 1 1 320px; min-width: 260px; display: flex; }
+  .nursing-layout { display: flex; gap: 20px; flex-wrap: wrap; align-items: stretch; max-width: 900px; margin: 0 auto; }
+  .nursing-left { flex: 2 1 320px; min-width: 260px; }
+  .nursing-right { flex: 1 1 210px; min-width: 210px; max-width: 210px; display: flex; }
 
   .calendar-box {
     background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 20px; box-sizing: border-box;
