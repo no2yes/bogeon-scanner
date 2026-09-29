@@ -164,10 +164,10 @@
   .nursing-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 10px; flex-wrap: wrap; }
   .nursing-list-header h2 { flex-shrink: 0; white-space: nowrap; }
   .write-log-btn {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 6px 12px; border-radius: 999px;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 9px; border-radius: 999px;
     background: linear-gradient(135deg, #2F6F5E, #3B8B72);
-    color: #fff; font-size: 12px; font-weight: 700; text-decoration: none;
+    color: #fff; font-size: 11px; font-weight: 700; text-decoration: none;
     box-shadow: 0 2px 6px rgba(47,111,94,0.3); white-space: nowrap;
     flex-shrink: 0;
   }
@@ -564,8 +564,8 @@
               <input type="checkbox" id="nursingSelectAllCb"> 전체선택
             </label>
             <span id="nursingSelectionCount" style="display:none; font-size:12px; color:#2F6F5E; font-weight:600; white-space:nowrap;"></span>
-            <button type="button" id="nursingDetailBtn" style="display:none; padding:6px 10px; border-radius:999px; border:1px solid #2F6F5E; background:#fff; color:#2F6F5E; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;">선택 상세내역</button>
-                        <button type="button" id="nursingDeleteBtn" style="display:none; padding:6px 10px; border-radius:999px; border:1px solid #DC2626; background:#fff; color:#DC2626; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;">선택 삭제</button>
+            <button type="button" id="nursingDetailBtn" style="display:none; padding:4px 8px; border-radius:999px; border:1px solid #2F6F5E; background:#fff; color:#2F6F5E; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap;">선택 상세내역</button>
+                        <button type="button" id="nursingDeleteBtn" style="display:none; padding:4px 8px; border-radius:999px; border:1px solid #DC2626; background:#fff; color:#DC2626; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap;">선택 삭제</button>
             <a class="write-log-btn" href="report.html" id="reportLink" style="background: #fff; color: #2F6F5E; border: 1px solid #2F6F5E; box-shadow: none;">📊 보고서</a>
             <a class="write-log-btn" href="nursing-log.html">📝 새 일지 작성</a>
           </div>
@@ -1018,7 +1018,9 @@
     <div style="background:#fff; border-radius:12px; padding:20px; width:min(600px, 90vw); max-height:80vh; overflow:auto; position:relative;">
       <button type="button" id="tempChartCloseBtn" style="position:absolute; top:10px; right:14px; border:none; background:none; font-size:20px; cursor:pointer;">✕</button>
       <h3 id="tempChartTitle" style="margin:0 0 12px 0;">체온 변화 그래프</h3>
-      <canvas id="tempChartCanvas" height="220"></canvas>
+      <div style="position:relative; width:100%; height:260px;">
+        <canvas id="tempChartCanvas"></canvas>
+      </div>
       <p id="tempChartEmptyMsg" style="display:none; text-align:center; color:#888; margin-top:20px;">오늘 등록된 체온 기록이 없습니다.</p>
     </div>
   </div>
@@ -1395,6 +1397,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: { legend: { display: true } },
           scales: { y: { min: 35, max: 40 } }
         }
@@ -2438,6 +2441,6 @@
       document.getElementById('backupLink').style.display = 'inline';
     }
   </script>
-  <div id="versionTag">v2026-09-29-18</div>
+  <div id="versionTag">v2026-09-29-19</div>
 </body>
 </html>
