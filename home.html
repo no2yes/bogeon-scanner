@@ -365,7 +365,11 @@
         setTimeout(function () { location.reload(); }, target.getTime() - now.getTime());
       }
     })();
-  function checkSessionValid_() {
+  // onValid를 넘기면(최초 1회 호출 때만) 세션이 유효하다고 확인된 뒤에 콜백을 실행합니다.
+  // 로딩 화면이 이 콜백을 기다렸다가 걷히므로, 세션 확인이 끝나기 전에는
+  // 화면 내용이 먼저 보이는 일이 없습니다. 무효하면 콜백을 아예 부르지 않고
+  // 바로 로그인 화면으로 보내서, 로딩 화면이 걷히지 않은 채로 이동합니다.
+  function verifySessionCore_(onValid) {
     var token = localStorage.getItem('authToken');
     if (!token) { location.href = 'index.html'; return; }
     fetch('https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec?action=verifySession&token=' + encodeURIComponent(token))
@@ -375,11 +379,14 @@
           localStorage.removeItem('authToken');
           alert('세션이 종료되어 다시 로그인이 필요합니다.');
           location.href = 'index.html';
+          return;
         }
+        if (onValid) onValid();
       })
-      .catch(function () {});
+      .catch(function () { if (onValid) onValid(); }); // 네트워크 오류로 확인 자체가 안 되면, 화면이 영영 안 뜨는 것보다는 일단 보여줍니다.
   }
-  checkSessionValid_();
+  function checkSessionValid_() { verifySessionCore_(); }
+  var initialSessionCheckPromise = new Promise(function (resolve) { verifySessionCore_(resolve); });
   setInterval(checkSessionValid_, 60000);
   </script>
   <div id="pageLoadingOverlay">
@@ -2047,7 +2054,7 @@
     }
 
     // 통계 카드·목록·보건일지 목록을 모두 불러오면(또는 실패해도) 첫 로딩 화면을 걷습니다.
-    Promise.all([nursingListPromise, statsPromise, medListPromise]).then(function () {
+    Promise.all([nursingListPromise, statsPromise, medListPromise, initialSessionCheckPromise]).then(function () {
       document.getElementById('pageLoadingOverlay').style.display = 'none';
     });
 
