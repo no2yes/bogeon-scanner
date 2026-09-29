@@ -114,6 +114,13 @@
   <div id="opListEmpty" style="display:none;">불러오는 중...</div>
 </div>
 
+<div class="card">
+  <h2>전체 세션 강제 로그아웃</h2>
+  <div class="default-note" style="margin-bottom:10px;">모든 기기(스마트폰, PC 등)에 로그인돼 있는 세션을 한번에 끊습니다. 분실/유출이 의심될 때 사용하세요.</div>
+  <button id="logoutAllBtn" style="padding:8px 14px; border-radius:8px; border:1px solid #DC2626; background:#fff; color:#DC2626; font-size:13px; font-weight:600; cursor:pointer;">전체 세션 강제 로그아웃</button>
+  <div id="logoutAllMsg" style="font-size:12px;margin-top:8px;min-height:16px;"></div>
+</div>
+
 <script>
 var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
 var myToken = localStorage.getItem('authToken');
@@ -257,6 +264,38 @@ function deleteOperator(email, itemEl) {
     alert('네트워크 오류로 삭제하지 못했습니다.');
   });
 }
+
+document.getElementById('logoutAllBtn').addEventListener('click', function () {
+  if (!confirm('정말로 모든 기기의 로그인 세션을 끊으시겠습니까?\n(본인을 포함한 모든 사람이 다시 로그인해야 합니다)')) return;
+
+  var btn = this;
+  var msgEl = document.getElementById('logoutAllMsg');
+  btn.disabled = true;
+  msgEl.textContent = '';
+  msgEl.className = '';
+
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'logoutAllSessions', token: myToken })
+  })
+  .then(function (res) { return res.json(); })
+  .then(function (data) {
+    btn.disabled = false;
+    if (data.ok) {
+      msgEl.textContent = '완료: ' + data.removed + '개의 세션을 끊었습니다. (본인도 다시 로그인해야 합니다)';
+      msgEl.className = 'ok';
+    } else {
+      msgEl.textContent = '실패: ' + (data.error || '알 수 없는 오류');
+      msgEl.className = 'error';
+    }
+  })
+  .catch(function () {
+    btn.disabled = false;
+    msgEl.textContent = '네트워크 오류로 처리하지 못했습니다.';
+    msgEl.className = 'error';
+  });
+});
 
 document.getElementById('addBtn').addEventListener('click', function () {
   var name = document.getElementById('newName').value.trim();
