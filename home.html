@@ -1270,6 +1270,11 @@
       listEl.innerHTML = '';
       currentPageNursingItems = items || [];
 
+      // 다른 탭에 다녀와도 이전에 선택해둔 게 남아있으면 "전체" 체크박스를
+      // 미리 체크된 상태로 보여줘서, 한 번만 눌러도 바로 전체 해제되게 합니다.
+      var selectAllCbEl = document.getElementById('nursingSelectAllCb');
+      if (selectAllCbEl) selectAllCbEl.checked = selectedNursingItems.size > 0;
+
       if (!items || items.length === 0) {
         emptyEl.textContent = '등록된 보건일지가 없습니다.';
         listEl.style.minHeight = ensureNursingListMinHeight_(listEl) + 'px';
@@ -2540,19 +2545,22 @@
         // "전체선택": 지금 화면에 보이는 항목들만 대상으로 전부 선택/해제합니다.
     document.getElementById('nursingSelectAllCb').addEventListener('change', function () {
       var checked = this.checked;
-      currentPageNursingItems.forEach(function (item) {
-        var key = item.visitDateTime + '|' + item.childName;
-        if (checked) {
+      if (checked) {
+        currentPageNursingItems.forEach(function (item) {
+          var key = item.visitDateTime + '|' + item.childName;
           selectedNursingItems.set(key, {
             rowIndex: item.rowIndex,
             childName: item.childName,
             visitDateTime: item.visitDateTime,
             report: item.report
           });
-        } else {
-          selectedNursingItems.delete(key);
-        }
-      });
+        });
+      } else {
+        // 체크 해제는 지금 보이는 항목뿐 아니라, 다른 탭에 다녀오는 사이
+        // 남아있을 수 있는 이전 선택까지 전부 한 번에 지웁니다.
+        // (따로 "선택 해제" 버튼을 만들지 않고, 이 체크박스로 전체 해제가 되도록)
+        selectedNursingItems.clear();
+      }
       document.querySelectorAll('.nursing-select-cb').forEach(function (cb) { cb.checked = checked; });
       updateNursingSelectionBar();
     });
