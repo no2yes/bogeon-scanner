@@ -370,6 +370,11 @@
   .nursing-layout { display: flex; gap: 20px; flex-wrap: wrap; align-items: stretch; max-width: 900px; margin: 0 auto; }
   .nursing-left { flex: 2 1 320px; min-width: 260px; }
   .nursing-right { flex: 1 1 290px; min-width: 290px; max-width: 290px; display: flex; }
+  /* 화면이 좁아 달력이 목록 아래로 내려가면, 폭도 목록과 같은 폭으로 꽉 채웁니다
+     (그대로 두면 290px로 좁게 남아 왼쪽 목록과 폭이 안 맞아 보임). */
+  @media (max-width: 640px) {
+    .nursing-right { min-width: 0; max-width: 100%; width: 100%; }
+  }
 
   .calendar-box {
     background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 20px; box-sizing: border-box;
@@ -2637,6 +2642,6 @@
       document.getElementById('backupLink').style.display = 'inline';
     }
   </script>
-  <div id="versionTag">v2026-09-30-2</div>
+  <div id="versionTag">v2026-09-30-3</div>
 </body>
 </html>
