@@ -655,7 +655,6 @@
             <label style="display:flex; align-items:center; gap:4px; font-size:12px; color:#666; cursor:pointer; white-space:nowrap;">
               <input type="checkbox" id="nursingSelectAllCb"> 전체
             </label>
-            <span id="nursingSelectionCount" style="display:none; font-size:12px; color:#2F6F5E; font-weight:600; white-space:nowrap;"></span>
             <button type="button" id="nursingDetailBtn" style="display:none; padding:4px 8px; border-radius:999px; border:1px solid #2F6F5E; background:#fff; color:#2F6F5E; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap;">선택 상세내역</button>
                         <button type="button" id="nursingDeleteBtn" style="display:none; padding:4px 8px; border-radius:999px; border:1px solid #DC2626; background:#fff; color:#DC2626; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap;">선택 삭제</button>
             <a class="write-log-btn" href="report.html" id="reportLink" style="background: #fff; color: #2F6F5E; border: 1px solid #2F6F5E; box-shadow: none;">📊 보고서</a>
@@ -1242,12 +1241,10 @@
     var selectedNursingItems = new Map();
 
     function updateNursingSelectionBar() {
-      var countEl = document.getElementById('nursingSelectionCount');
       var btnEl = document.getElementById('nursingDetailBtn');
       var deleteBtnEl = document.getElementById('nursingDeleteBtn');
       var count = selectedNursingItems.size;
       if (count > 0) {
-        countEl.style.display = 'inline';
         btnEl.style.display = 'inline-block';
         // "일지 내용 삭제" 권한이 없으면 숨기는 대신, 회색으로 보이게 하고 이유를 알려줍니다.
         deleteBtnEl.style.display = 'inline-block';
@@ -1260,9 +1257,7 @@
           deleteBtnEl.style.pointerEvents = 'none';
           deleteBtnEl.textContent = '🔒 선택 삭제 (권한 필요)';
         }
-        countEl.textContent = count + '건 선택됨';
       } else {
-        countEl.style.display = 'none';
         btnEl.style.display = 'none';
         deleteBtnEl.style.display = 'none';
       }
