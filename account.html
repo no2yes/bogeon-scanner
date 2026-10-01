@@ -59,6 +59,8 @@
   }
   @keyframes spin{to{transform:rotate(360deg);}}
 </style>
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=9b259e2c4f80c0b1502e4915bad3e99c&libraries=services"></script>
 </head>
 <body>
 
@@ -120,6 +122,16 @@ setInterval(checkSessionValid_, 60000);
   </div>
   <div id="orgNameMsg" style="font-size:12px;margin-top:8px;min-height:16px;"></div>
   <div class="default-note">여기서 설정한 기관명은 로그인 화면과 계정관리 화면 상단에 표시됩니다. 인사이동으로 담당자가 바뀌어도 시스템은 이 기관명을 그대로 유지합니다.</div>
+</div>
+
+<div class="card">
+  <h2>날씨 위치 설정</h2>
+  <div class="default-note" style="margin-bottom:10px;">현재 위치: <strong id="weatherCurrentAddr">불러오는 중...</strong></div>
+  <div class="add-row">
+    <button id="weatherSearchBtn" type="button">주소 검색해서 변경</button>
+  </div>
+  <div id="weatherLocMsg" style="font-size:12px;margin-top:8px;min-height:16px;"></div>
+  <div class="default-note">여기서 설정한 위치를 기준으로 홈 화면에 날씨 정보가 표시됩니다. 설정하지 않으면 기본 위치(강릉시 인근)로 표시됩니다.</div>
 </div>
 
 <div class="card">
@@ -473,6 +485,110 @@ document.getElementById('orgNameSaveBtn').addEventListener('click', function () 
     msgEl.className = 'error';
   });
 });
+
+// ---- 날씨 위치 설정 ----
+// 기상청 단기예보 API는 위경도가 아니라 LCC 격자좌표(nx, ny)를 씁니다.
+function latLonToWeatherGrid_(lat, lon) {
+  var RE = 6371.00877, GRID = 5.0, SLAT1 = 30.0, SLAT2 = 60.0, OLON = 126.0, OLAT = 38.0, XO = 43, YO = 136;
+  var DEGRAD = Math.PI / 180.0;
+  var re = RE / GRID;
+  var slat1 = SLAT1 * DEGRAD;
+  var slat2 = SLAT2 * DEGRAD;
+  var olon = OLON * DEGRAD;
+  var olat = OLAT * DEGRAD;
+
+  var sn = Math.tan(Math.PI * 0.25 + slat2 * 0.5) / Math.tan(Math.PI * 0.25 + slat1 * 0.5);
+  sn = Math.log(Math.cos(slat1) / Math.cos(slat2)) / Math.log(sn);
+  var sf = Math.tan(Math.PI * 0.25 + slat1 * 0.5);
+  sf = Math.pow(sf, sn) * Math.cos(slat1) / sn;
+  var ro = Math.tan(Math.PI * 0.25 + olat * 0.5);
+  ro = re * sf / Math.pow(ro, sn);
+
+  var ra = Math.tan(Math.PI * 0.25 + lat * DEGRAD * 0.5);
+  ra = re * sf / Math.pow(ra, sn);
+  var theta = lon * DEGRAD - olon;
+  if (theta > Math.PI) theta -= 2.0 * Math.PI;
+  if (theta < -Math.PI) theta += 2.0 * Math.PI;
+  theta *= sn;
+
+  var nx = Math.floor(ra * Math.sin(theta) + XO + 0.5);
+  var ny = Math.floor(ro - ra * Math.cos(theta) + YO + 0.5);
+  return { nx: nx, ny: ny };
+}
+
+function loadWeatherLocation_() {
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ type: 'getOrgSettings' })
+  })
+  .then(function (res) { return res.json(); })
+  .then(function (data) {
+    var el = document.getElementById('weatherCurrentAddr');
+    if (!el) return;
+    if (data.ok && data.weatherAddress) {
+      el.textContent = data.weatherAddress + ' (nx:' + data.weatherNx + ', ny:' + data.weatherNy + ')';
+    } else {
+      el.textContent = '설정 안 됨 (기본 위치 사용)';
+    }
+  })
+  .catch(function () {});
+}
+loadWeatherLocation_();
+
+var weatherSearchBtnEl = document.getElementById('weatherSearchBtn');
+if (weatherSearchBtnEl) {
+  weatherSearchBtnEl.addEventListener('click', function () {
+    var msgEl = document.getElementById('weatherLocMsg');
+    msgEl.textContent = '';
+    msgEl.className = '';
+
+    new daum.Postcode({
+      oncomplete: function (data) {
+        var address = data.roadAddress || data.jibunAddress;
+        var geocoder = new kakao.maps.services.Geocoder();
+        geocoder.addressSearch(address, function (result, status) {
+          if (status !== kakao.maps.services.Status.OK || !result.length) {
+            msgEl.textContent = '주소를 좌표로 변환하지 못했습니다. 다시 시도해 주세요.';
+            msgEl.className = 'error';
+            return;
+          }
+          var lat = parseFloat(result[0].y);
+          var lon = parseFloat(result[0].x);
+          var grid = latLonToWeatherGrid_(lat, lon);
+
+          msgEl.textContent = '저장 중...';
+          fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              type: 'updateWeatherLocation',
+              token: myToken,
+              nx: grid.nx,
+              ny: grid.ny,
+              address: address
+            })
+          })
+          .then(function (res) { return res.json(); })
+          .then(function (saveData) {
+            if (saveData.ok) {
+              msgEl.textContent = '저장되었습니다.';
+              msgEl.className = 'ok';
+              loadWeatherLocation_();
+            } else {
+              msgEl.textContent = saveData.error || '저장에 실패했습니다.';
+              msgEl.className = 'error';
+            }
+          })
+          .catch(function () {
+            msgEl.textContent = '네트워크 오류가 발생했습니다.';
+            msgEl.className = 'error';
+          });
+        });
+      }
+    }).open();
+  });
+}
 </script>
 
 </body>
