@@ -603,6 +603,33 @@
   })();
   </script>
 
+  <div id="weatherWidget" style="font-size:11px; color:#666; margin:0 0 10px;">불러오는 중...</div>
+  <script>
+  (function () {
+    var token = localStorage.getItem('authToken');
+    if (!token) return;
+    var base = 'https://script.google.com/macros/s/AKfycbyXl1dyqmCh0umvMr-8wjy74n0488S7z6BJOtsLzNC6N3wKNc98AKD2irMal1EpNFn-/exec';
+    var widgetEl = document.getElementById('weatherWidget');
+
+    fetch(base + '?action=weather&token=' + encodeURIComponent(token))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (!data || !data.ok || data.temperature === undefined || data.temperature === null) {
+          widgetEl.textContent = '날씨 정보를 가져오지 못했습니다.';
+          return;
+        }
+        var parts = ['🌡 ' + data.temperature + '℃'];
+        if (data.humidity) parts.push('습도 ' + data.humidity + '%');
+        if (data.precipitationType) parts.push('<span style="color:#2F6F5E; font-weight:700;">' + data.precipitationType + '</span>');
+        if (data.windSpeed) parts.push('바람 ' + data.windSpeed + 'm/s');
+        widgetEl.innerHTML = parts.join(' · ');
+      })
+      .catch(function () {
+        widgetEl.textContent = '날씨 정보를 가져오지 못했습니다.';
+      });
+  })();
+  </script>
+
   <!-- 미세먼지 경보/주의보 발령 시 화면 정중앙에 크게 띄우는 알림 -->
   <div id="airAlarmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:950; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
     <div style="background:#fff; border-radius:20px; padding:32px 24px; max-width:420px; width:100%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
@@ -2642,6 +2669,6 @@
       document.getElementById('backupLink').style.display = 'inline';
     }
   </script>
-  <div id="versionTag">v2026-09-30-3</div>
+  <div id="versionTag">v2026-10-01-1</div>
 </body>
 </html>
