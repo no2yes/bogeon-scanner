@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>보건실 관리시스템</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
   body { font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; margin: 0; padding: 12px 16px; background: #F7F5EF; color: #1F2A24; max-width: 900px; margin-left: auto; margin-right: auto; box-sizing: border-box; }
@@ -320,6 +321,27 @@
   .qr-open-btn.qr-btn-loading svg { opacity: 0.15; }
   .qr-open-btn.qr-btn-loading .qr-btn-spinner { display: block; }
   @keyframes qr-btn-spin { to { transform: rotate(360deg); } }
+
+  /* 목록 제목 옆 "엑셀로 내보내기" 아이콘 버튼 */
+  .xlsx-export-btn {
+    display: inline-flex; align-items: center; justify-content: center; position: relative;
+    width: 26px; height: 26px; margin: 0 0 0 6px; padding: 0; vertical-align: middle;
+    border-radius: 50%; border: 1px solid #E4E1D6; background: #fff; color: #217346;
+    cursor: pointer; font-family: inherit; -webkit-appearance: none; appearance: none;
+    box-shadow: 0 1px 2px rgba(31,42,36,0.08);
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  }
+  .xlsx-export-btn svg { width: 15px; height: 15px; display: block; transition: opacity 0.15s ease; }
+  .xlsx-export-btn:hover { background: #E7F3EC; border-color: #217346; box-shadow: 0 2px 6px rgba(33,115,70,0.2); }
+  .xlsx-export-btn:active { transform: scale(0.93); }
+  .xlsx-export-btn:disabled { cursor: default; opacity: 0.5; }
+  .xlsx-export-btn .qr-btn-spinner {
+    display: none; position: absolute; inset: 5px; border-radius: 50%;
+    border: 2px solid rgba(33,115,70,0.15); border-top-color: #217346;
+    animation: qr-btn-spin 0.7s linear infinite;
+  }
+  .xlsx-export-btn.qr-btn-loading svg { opacity: 0.15; }
+  .xlsx-export-btn.qr-btn-loading .qr-btn-spinner { display: block; }
 
   #feedbackFab {
     position: fixed; right: 16px; bottom: 16px; z-index: 500;
@@ -681,7 +703,16 @@
         </div>
 
         <div class="nursing-list-header">
-          <h2 style="margin:0;">최근 보건일지</h2>
+          <h2 style="margin:0; display:flex; align-items:center;">최근 보건일지
+            <button type="button" id="nursingExcelBtn" class="xlsx-export-btn" title="엑셀로 내보내기">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                <path d="M15 3v4h4" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                <path d="M8.5 12l3 5M11.5 12l-3 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+              <span class="qr-btn-spinner"></span>
+            </button>
+          </h2>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
             <button type="button" id="nursingDetailBtn" style="display:none; padding:4px 8px; border-radius:999px; border:1px solid #2F6F5E; background:#fff; color:#2F6F5E; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap;">선택 상세내역</button>
             <button type="button" id="nursingDeleteBtn" style="display:none; padding:4px 8px; border-radius:999px; border:1px solid #DC2626; background:#fff; color:#DC2626; font-size:11px; font-weight:600; cursor:pointer; white-space:nowrap;">선택 삭제</button>
@@ -1053,7 +1084,16 @@
         </script>
 
         <div class="med-list-header">
-          <h2 style="margin:0;">보유 약품 목록</h2>
+          <h2 style="margin:0; display:flex; align-items:center;">보유 약품 목록
+            <button type="button" id="medExcelBtn" class="xlsx-export-btn" title="엑셀로 내보내기">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                <path d="M15 3v4h4" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                <path d="M8.5 12l3 5M11.5 12l-3 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+              <span class="qr-btn-spinner"></span>
+            </button>
+          </h2>
           <div style="display:flex; align-items:center; gap:8px;">
             <input type="text" id="medSearchInput" placeholder="약품명 검색" style="padding:6px 8px; border-radius:8px; border:1px solid #ccc; font-size:12px; font-family:inherit; width:65px;">
             <label style="display:flex; align-items:center; gap:4px; font-size:12px; color:#555; white-space:nowrap;">
@@ -2656,6 +2696,96 @@
         setTimeout(function () { btn.textContent = original; }, 1200);
       });
     });
+
+    // ── 엑셀로 내보내기 ──────────────────────────────────────
+    function pad2_(n) { return n < 10 ? '0' + n : '' + n; }
+    function formatDateForFilename_() {
+      var d = new Date();
+      return d.getFullYear() + '-' + pad2_(d.getMonth() + 1) + '-' + pad2_(d.getDate());
+    }
+    function exportRowsToXlsx_(filename, sheetName, headerRow, dataRows) {
+      var ws = XLSX.utils.aoa_to_sheet([headerRow].concat(dataRows));
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      XLSX.writeFile(wb, filename);
+    }
+
+    document.getElementById('medExcelBtn').addEventListener('click', function () {
+      if (!allMedGroups || !allMedGroups.length) { alert('내보낼 약품이 없습니다.'); return; }
+      var rows = [];
+      allMedGroups.forEach(function (group) {
+        (group.items || []).forEach(function (item) {
+          rows.push([
+            group.name,
+            item.company || '',
+            item.spec || '',
+            item.contentAmount || '',
+            item.qty,
+            item.openedQty || 0,
+            group.expiry || '',
+            (group.dday === undefined || group.dday === null) ? '' : group.dday
+          ]);
+        });
+      });
+      exportRowsToXlsx_(
+        '약품목록_' + formatDateForFilename_() + '.xlsx', '약품목록',
+        ['약품명', '제조사', '규격', '함량', '수량', '개봉수량', '유통기한', '유통기한까지(일)'],
+        rows
+      );
+    });
+
+    document.getElementById('nursingExcelBtn').addEventListener('click', function () {
+      var btn = this;
+      btn.disabled = true;
+      btn.classList.add('qr-btn-loading');
+
+      function resetBtn_() {
+        btn.disabled = false;
+        btn.classList.remove('qr-btn-loading');
+      }
+
+      var token = localStorage.getItem('authToken') || '';
+      function fetchNursingPage_(page) {
+        return fetch(GAS_URL + '?action=nursingLogList&page=' + page + '&keyword=' + encodeURIComponent(nursingSearchKeyword) + '&token=' + encodeURIComponent(token))
+          .then(function (res) { return res.json(); });
+      }
+
+      var allItems = [];
+      fetchNursingPage_(1).then(function (data) {
+        if (!data || !data.ok) { throw new Error((data && data.error) || '불러오기 실패'); }
+        allItems = allItems.concat(data.items || []);
+        var totalCount = data.totalCount || allItems.length;
+        var totalPages = Math.max(1, Math.ceil(totalCount / nursingPageSize));
+        if (totalPages <= 1) return allItems;
+
+        var pagePromises = [];
+        for (var p = 2; p <= totalPages; p++) pagePromises.push(fetchNursingPage_(p));
+        return Promise.all(pagePromises).then(function (results) {
+          results.forEach(function (d) { if (d && d.ok) allItems = allItems.concat(d.items || []); });
+          return allItems;
+        });
+      }).then(function (items) {
+        if (!items || !items.length) { alert('내보낼 보건일지가 없습니다.'); resetBtn_(); return; }
+        var rows = items.map(function (item) {
+          return [
+            item.visitDateTime || '',
+            item.childName || '',
+            item.aiUsed || '',
+            item.report || '',
+            item.rawText || ''
+          ];
+        });
+        exportRowsToXlsx_(
+          '보건일지_' + formatDateForFilename_() + '.xlsx', '보건일지',
+          ['방문일시', '대상아동', 'AI작성여부', '정리보고서', '원문'],
+          rows
+        );
+        resetBtn_();
+      }).catch(function (err) {
+        alert('엑셀 생성 중 오류가 발생했습니다: ' + ((err && err.message) || ''));
+        resetBtn_();
+      });
+    });
   </script>
   <div style="position: fixed; left: 8px; bottom: 24px; z-index: 400; display: flex; gap: 10px;">
     <a href="manual.html" style="font-size: 10px; color: #bbb; text-decoration: none;">❓ 사용법</a>
@@ -2669,6 +2799,6 @@
       document.getElementById('backupLink').style.display = 'inline';
     }
   </script>
-  <div id="versionTag">v2026-10-01-1</div>
+  <div id="versionTag">v2026-10-02-1</div>
 </body>
 </html>
